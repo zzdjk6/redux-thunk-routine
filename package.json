@@ -1,0 +1,38 @@
+{
+  "name": "redux-thunk-routine",
+  "version": "1.0.0",
+  "description": "Routine for redux-thunk",
+  "main": "index.js",
+  "dependencies": {
+    "redux-actions": "^2.6.5",
+    "redux-thunk": "^2.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-typescript": "^7.3.3",
+    "@types/jest": "^24.0.15",
+    "babel-jest": "^24.8.0",
+    "jest": "^24.8.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/zzdjk6/redux-thunk-routine.git"
+  },
+  "keywords": [
+    "redux",
+    "thunk",
+    "routine",
+    "boilerplate"
+  ],
+  "author": "Thor (Shenghan)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zzdjk6/redux-thunk-routine/issues"
+  },
+  "homepage": "https://github.com/zzdjk6/redux-thunk-routine#readme"
+}
