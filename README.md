@@ -113,3 +113,13 @@ if (action.type === FetchDataRoutine.FAILURE) {
 See, there is no need to define `constants` and `action creators` for every `thunk`: `routine` gots them.
 And yes, the type for each action is well-defined too!
 The type for `FetchDataRoutine.success` is generated as `(payload: DataType) => Action<DataType>` by magic (well, it's generic).
+
+Bonus:
+
+There are 2 util functions to help you get typed payload/error:
+
+```typescript
+const data = getTypedPayload(FetchDataRoutine, action);
+
+const error = getTypedError(FetchDataRoutine, action);
+```
