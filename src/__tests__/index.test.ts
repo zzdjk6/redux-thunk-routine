@@ -1,4 +1,4 @@
-import { createThunkRoutine, getTypedError, getTypedPayload, ReduxThunkRoutine } from './index';
+import { createThunkRoutine, getTypedError, getTypedPayload, ReduxThunkRoutine } from '../index';
 
 test('Routine has correct action name', () => {
     const routine = createThunkRoutine('TEST/MOCK_ROUTINE');

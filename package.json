@@ -1,11 +1,12 @@
 {
   "name": "redux-thunk-routine",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Routine for redux-thunk",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist/**/*"],
   "dependencies": {
-    "redux-actions": "^2.6.5",
-    "redux-thunk": "^2.3.0"
+    "redux-actions": "^2.6.5"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
@@ -13,11 +14,14 @@
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-typescript": "^7.3.3",
     "@types/jest": "^24.0.15",
+    "@types/redux-actions": "^2.6.1",
     "babel-jest": "^24.8.0",
-    "jest": "^24.8.0"
+    "jest": "^24.8.0",
+    "typescript": "^3.5.3"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
