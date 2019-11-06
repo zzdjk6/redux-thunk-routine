@@ -1,3 +1,5 @@
+# redux-thunk-routine [![Build Status](https://travis-ci.com/zzdjk6/redux-thunk-routine.svg?branch=master)](https://travis-ci.com/zzdjk6/redux-thunk-routine)
+
 There is too much boilerplate code when using `redux-thunk`!
 It becomes even worse when adding static types for `actions`!
 Let's find a way to reduce the boilerplate!
