@@ -8,6 +8,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const redux_actions_1 = require("redux-actions");
 class ReduxThunkRoutine {
     constructor(actionType) {
+        this.request = (payload) => {
+            const actionCreator = redux_actions_1.createAction(this.REQUEST);
+            return actionCreator(payload);
+        };
+        this.success = (payload) => {
+            const actionCreator = redux_actions_1.createAction(this.SUCCESS);
+            return actionCreator(payload);
+        };
+        this.failure = (payload) => {
+            const actionCreator = redux_actions_1.createAction(this.FAILURE);
+            return actionCreator(payload);
+        };
         this.actionType = actionType;
     }
     get REQUEST() {
@@ -18,18 +30,6 @@ class ReduxThunkRoutine {
     }
     get FAILURE() {
         return `${this.actionType}/FAILURE`;
-    }
-    request(payload) {
-        const actionCreator = redux_actions_1.createAction(this.REQUEST);
-        return actionCreator(payload);
-    }
-    success(payload) {
-        const actionCreator = redux_actions_1.createAction(this.SUCCESS);
-        return actionCreator(payload);
-    }
-    failure(payload) {
-        const actionCreator = redux_actions_1.createAction(this.FAILURE);
-        return actionCreator(payload);
     }
 }
 exports.ReduxThunkRoutine = ReduxThunkRoutine;
