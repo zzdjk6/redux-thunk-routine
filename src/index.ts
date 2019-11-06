@@ -6,22 +6,16 @@
 import { createAction, Action } from "redux-actions";
 
 export class ReduxThunkRoutine<P, E = Error> {
-  actionType: string;
+  readonly actionType: string;
+  readonly REQUEST: string;
+  readonly SUCCESS: string;
+  readonly FAILURE: string;
 
   constructor(actionType: string) {
     this.actionType = actionType;
-  }
-
-  get REQUEST(): string {
-    return `${this.actionType}/REQUEST`;
-  }
-
-  get SUCCESS(): string {
-    return `${this.actionType}/SUCCESS`;
-  }
-
-  get FAILURE(): string {
-    return `${this.actionType}/FAILURE`;
+    this.REQUEST = `${this.actionType}/REQUEST`;
+    this.SUCCESS = `${this.actionType}/SUCCESS`;
+    this.FAILURE = `${this.actionType}/FAILURE`;
   }
 
   request = (payload?: any): Action<any> => {

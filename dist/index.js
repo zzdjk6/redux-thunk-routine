@@ -21,15 +21,9 @@ class ReduxThunkRoutine {
             return actionCreator(payload);
         };
         this.actionType = actionType;
-    }
-    get REQUEST() {
-        return `${this.actionType}/REQUEST`;
-    }
-    get SUCCESS() {
-        return `${this.actionType}/SUCCESS`;
-    }
-    get FAILURE() {
-        return `${this.actionType}/FAILURE`;
+        this.REQUEST = `${this.actionType}/REQUEST`;
+        this.SUCCESS = `${this.actionType}/SUCCESS`;
+        this.FAILURE = `${this.actionType}/FAILURE`;
     }
 }
 exports.ReduxThunkRoutine = ReduxThunkRoutine;
