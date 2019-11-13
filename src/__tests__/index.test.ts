@@ -1,5 +1,4 @@
-import { createThunkRoutine, getTypedError, getTypedPayload, ReduxThunkRoutine, dispatchRoutine } from '../index';
-import { Action } from 'redux-actions';
+import { createThunkRoutine, dispatchRoutine, getTypedError, getTypedPayload, ReduxThunkRoutine } from '../index';
 
 test('Routine has correct action name', () => {
   const routine = createThunkRoutine('TEST/MOCK_ROUTINE');
@@ -33,6 +32,10 @@ test('Get typed payload', () => {
   const routine: ReduxThunkRoutine<number> = createThunkRoutine('TEST/MOCK_ROUTINE');
   const action = routine.success(123);
   expect(getTypedPayload(routine, action)).toEqual(123);
+  expect(routine.getSuccessPayload(action)).toEqual(123);
+
+  const mismatchingRoutine: ReduxThunkRoutine<string> = createThunkRoutine('TEST/MIS_MATCHED_ROUTINE');
+  expect(() => mismatchingRoutine.getSuccessPayload(action)).toThrow();
 });
 
 test('Get typed error', () => {
@@ -42,6 +45,10 @@ test('Get typed error', () => {
   const routine: ReduxThunkRoutine<number, CustomError> = createThunkRoutine('TEST/MOCK_ROUTINE');
   const action = routine.failure(new CustomError());
   expect(getTypedError(routine, action)).toHaveProperty('name', 'CustomError');
+  expect(routine.getFailurePayload(action)).toHaveProperty('name', 'CustomError');
+
+  const mismatchingRoutine: ReduxThunkRoutine<string> = createThunkRoutine('TEST/MIS_MATCHED_ROUTINE');
+  expect(() => mismatchingRoutine.getFailurePayload(action)).toThrow();
 });
 
 test('Action creators are correctly bound', () => {

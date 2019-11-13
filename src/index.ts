@@ -46,6 +46,28 @@ export class ReduxThunkRoutine<P, E extends Error = Error> {
     const actionCreator = createAction(this.FAILURE);
     return actionCreator(payload);
   };
+
+  isSuccessAction = (action: Action<any>): action is Action<P> => {
+    return action.type === this.SUCCESS;
+  }
+
+  isFailureAction = (action: Action<any>): action is Action<E> => {
+    return action.type === this.FAILURE;
+  }
+
+  getSuccessPayload = (action: Action<any>): P => {
+    if (this.isSuccessAction(action)) {
+      return action.payload;
+    }
+    throw new TypeError();
+  }
+
+  getFailurePayload = (action: Action<any>): E => {
+    if (this.isFailureAction(action)) {
+      return action.payload;
+    }
+    throw new TypeError();
+  }
 }
 
 // Helpers
@@ -82,11 +104,17 @@ export const createThunkRoutine = <P, E extends Error = Error>(actionType: strin
   return new ReduxThunkRoutine(actionType);
 };
 
+/**
+ * @deprecated
+ */
 export const getTypedPayload = <P>(routine: ReduxThunkRoutine<P>, action: Action<any>): P => {
   const payload: P = action.payload;
   return payload;
 };
 
+/**
+ * @deprecated
+ */
 export const getTypedError = <E extends Error = Error>(routine: ReduxThunkRoutine<any, E>, action: any): E => {
   const error: E = action.payload;
   return error;
