@@ -30,6 +30,24 @@ class ReduxThunkRoutine {
             const actionCreator = redux_actions_1.createAction(this.FAILURE);
             return actionCreator(payload);
         };
+        this.isSuccessAction = (action) => {
+            return action.type === this.SUCCESS;
+        };
+        this.isFailureAction = (action) => {
+            return action.type === this.FAILURE;
+        };
+        this.getSuccessPayload = (action) => {
+            if (this.isSuccessAction(action)) {
+                return action.payload;
+            }
+            throw new TypeError();
+        };
+        this.getFailurePayload = (action) => {
+            if (this.isFailureAction(action)) {
+                return action.payload;
+            }
+            throw new TypeError();
+        };
         this.actionType = actionType;
         this.REQUEST = `${this.actionType}/REQUEST`;
         this.SUCCESS = `${this.actionType}/SUCCESS`;
@@ -60,10 +78,16 @@ const isPlainExecutor = (executor) => {
 exports.createThunkRoutine = (actionType) => {
     return new ReduxThunkRoutine(actionType);
 };
+/**
+ * @deprecated
+ */
 exports.getTypedPayload = (routine, action) => {
     const payload = action.payload;
     return payload;
 };
+/**
+ * @deprecated
+ */
 exports.getTypedError = (routine, action) => {
     const error = action.payload;
     return error;
