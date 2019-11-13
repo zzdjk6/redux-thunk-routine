@@ -1,6 +1,6 @@
 {
   "name": "redux-thunk-routine",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Routine for redux-thunk",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
