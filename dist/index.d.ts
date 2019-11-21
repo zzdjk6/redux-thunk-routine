@@ -7,11 +7,16 @@ export declare type ComposedExecutor<P, E extends Error> = {
 export declare type PlainExecutor<P> = () => Promise<P>;
 export declare type Executor<P, E extends Error> = PlainExecutor<P> | ComposedExecutor<P, E>;
 export declare class ReduxThunkRoutine<P, E extends Error = Error> {
+    /**
+     * @deprecated
+     * Use routineType instead
+     */
     readonly actionType: string;
+    readonly routineType: string;
     readonly REQUEST: string;
     readonly SUCCESS: string;
     readonly FAILURE: string;
-    constructor(actionType: string);
+    constructor(routineType: string);
     request: (payload?: any) => Action<any>;
     success: (payload: P) => Action<P>;
     failure: (payload: E) => Action<E>;
@@ -21,12 +26,14 @@ export declare class ReduxThunkRoutine<P, E extends Error = Error> {
     getFailurePayload: (action: Action<any>) => E;
 }
 export declare const dispatchRoutine: <P, E extends Error>(dispatch: any, routine: ReduxThunkRoutine<P, E>, executor: Executor<P, E>) => Promise<any>;
-export declare const createThunkRoutine: <P, E extends Error = Error>(actionType: string) => ReduxThunkRoutine<P, E>;
+export declare const createThunkRoutine: <P, E extends Error = Error>(routineType: string) => ReduxThunkRoutine<P, E>;
 /**
  * @deprecated
+ * Use routine.getSuccessPayload instead
  */
 export declare const getTypedPayload: <P>(routine: ReduxThunkRoutine<P, Error>, action: Action<any>) => P;
 /**
  * @deprecated
+ * Use routine.getFailurePayload instead
  */
 export declare const getTypedError: <E extends Error = Error>(routine: ReduxThunkRoutine<any, E>, action: any) => E;

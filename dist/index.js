@@ -17,7 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const redux_actions_1 = require("redux-actions");
 // Classes
 class ReduxThunkRoutine {
-    constructor(actionType) {
+    constructor(routineType) {
         this.request = (payload) => {
             const actionCreator = redux_actions_1.createAction(this.REQUEST);
             return actionCreator(payload);
@@ -48,10 +48,11 @@ class ReduxThunkRoutine {
             }
             throw new TypeError();
         };
-        this.actionType = actionType;
-        this.REQUEST = `${this.actionType}/REQUEST`;
-        this.SUCCESS = `${this.actionType}/SUCCESS`;
-        this.FAILURE = `${this.actionType}/FAILURE`;
+        this.actionType = routineType;
+        this.routineType = routineType;
+        this.REQUEST = `${this.routineType}/REQUEST`;
+        this.SUCCESS = `${this.routineType}/SUCCESS`;
+        this.FAILURE = `${this.routineType}/FAILURE`;
     }
 }
 exports.ReduxThunkRoutine = ReduxThunkRoutine;
@@ -75,11 +76,12 @@ const isComposedExecutor = (executor) => {
 const isPlainExecutor = (executor) => {
     return typeof executor === 'function';
 };
-exports.createThunkRoutine = (actionType) => {
-    return new ReduxThunkRoutine(actionType);
+exports.createThunkRoutine = (routineType) => {
+    return new ReduxThunkRoutine(routineType);
 };
 /**
  * @deprecated
+ * Use routine.getSuccessPayload instead
  */
 exports.getTypedPayload = (routine, action) => {
     const payload = action.payload;
@@ -87,6 +89,7 @@ exports.getTypedPayload = (routine, action) => {
 };
 /**
  * @deprecated
+ * Use routine.getFailurePayload instead
  */
 exports.getTypedError = (routine, action) => {
     const error = action.payload;

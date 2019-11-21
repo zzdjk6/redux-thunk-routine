@@ -20,16 +20,23 @@ export type Executor<P, E extends Error> = PlainExecutor<P> | ComposedExecutor<P
 // Classes
 
 export class ReduxThunkRoutine<P, E extends Error = Error> {
+  /**
+   * @deprecated
+   * Use routineType instead
+   */
   readonly actionType: string;
+
+  readonly routineType: string;
   readonly REQUEST: string;
   readonly SUCCESS: string;
   readonly FAILURE: string;
 
-  constructor(actionType: string) {
-    this.actionType = actionType;
-    this.REQUEST = `${this.actionType}/REQUEST`;
-    this.SUCCESS = `${this.actionType}/SUCCESS`;
-    this.FAILURE = `${this.actionType}/FAILURE`;
+  constructor(routineType: string) {
+    this.actionType = routineType;
+    this.routineType = routineType;
+    this.REQUEST = `${this.routineType}/REQUEST`;
+    this.SUCCESS = `${this.routineType}/SUCCESS`;
+    this.FAILURE = `${this.routineType}/FAILURE`;
   }
 
   request = (payload?: any): Action<any> => {
@@ -49,25 +56,25 @@ export class ReduxThunkRoutine<P, E extends Error = Error> {
 
   isSuccessAction = (action: Action<any>): action is Action<P> => {
     return action.type === this.SUCCESS;
-  }
+  };
 
   isFailureAction = (action: Action<any>): action is Action<E> => {
     return action.type === this.FAILURE;
-  }
+  };
 
   getSuccessPayload = (action: Action<any>): P => {
     if (this.isSuccessAction(action)) {
       return action.payload;
     }
     throw new TypeError();
-  }
+  };
 
   getFailurePayload = (action: Action<any>): E => {
     if (this.isFailureAction(action)) {
       return action.payload;
     }
     throw new TypeError();
-  }
+  };
 }
 
 // Helpers
@@ -100,12 +107,13 @@ const isPlainExecutor = <P, E extends Error>(executor: Executor<P, E>): executor
   return typeof executor === 'function';
 };
 
-export const createThunkRoutine = <P, E extends Error = Error>(actionType: string): ReduxThunkRoutine<P, E> => {
-  return new ReduxThunkRoutine(actionType);
+export const createThunkRoutine = <P, E extends Error = Error>(routineType: string): ReduxThunkRoutine<P, E> => {
+  return new ReduxThunkRoutine(routineType);
 };
 
 /**
  * @deprecated
+ * Use routine.getSuccessPayload instead
  */
 export const getTypedPayload = <P>(routine: ReduxThunkRoutine<P>, action: Action<any>): P => {
   const payload: P = action.payload;
@@ -114,6 +122,7 @@ export const getTypedPayload = <P>(routine: ReduxThunkRoutine<P>, action: Action
 
 /**
  * @deprecated
+ * Use routine.getFailurePayload instead
  */
 export const getTypedError = <E extends Error = Error>(routine: ReduxThunkRoutine<any, E>, action: any): E => {
   const error: E = action.payload;

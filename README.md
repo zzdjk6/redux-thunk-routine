@@ -36,28 +36,28 @@ const fetchData = () => async (dispatch: Dispatch, getState: () => RootState) =>
     await dispatch(fetchDataFailure(e));
     throw e;
   }
-}
+};
 
 // 4. Handle actions in reducers
 switch (action.type) {
   case FETCH_DATA_REQUEST:
     return {
-        ...state,
-        isFetching: true,
-        error: null
+      ...state,
+      isFetching: true,
+      error: null
     };
   case FETCH_DATA_SUCCESS:
-     return {
-        ...state,
-        isFetching: false,
-        data: action.payload,
-        error: null
+    return {
+      ...state,
+      isFetching: false,
+      data: action.payload,
+      error: null
     };
   case FETCH_DATA_FAILURE:
     return {
-        ...state,
-        isFetching: false,
-        error: action.payload
+      ...state,
+      isFetching: false,
+      error: action.payload
     };
 }
 ```
@@ -88,28 +88,28 @@ const fetchData = () => async (dispatch: Dispatch, getState: () => RootState) =>
     await dispatch(fetchDataRoutine.failure(e));
     throw e;
   }
-}
+};
 
 // 3. Handle actions in reducers
 switch (action.type) {
   case fetchDataRoutine.REQUEST:
     return {
-        ...state,
-        isFetching: true,
-        error: null
+      ...state,
+      isFetching: true,
+      error: null
     };
   case fetchDataRoutine.SUCCESS:
     return {
-        ...state,
-        isFetching: false,
-        data: action.payload,
-        error: null
+      ...state,
+      isFetching: false,
+      data: action.payload,
+      error: null
     };
   case fetchDataRoutine.FAILURE:
     return {
-        ...state,
-        isFetching: false,
-        error: action.payload
+      ...state,
+      isFetching: false,
+      error: action.payload
     };
 }
 ```
@@ -118,7 +118,7 @@ See, there is no need to define `constants` and `action creators` for every `thu
 And yes, the type for each action is well-defined too!
 The type for `fetchDataRoutine.success` is generated as `(payload: DataType) => Action<DataType>` by magic (well, it's generic).
 
-## Furthur improvements
+## Further improvements
 
 ### Dispatch routine in 1-stop manner
 
@@ -129,7 +129,7 @@ const fetchData = () => async (dispatch: Dispatch, getState: () => RootState) =>
   return await dispatchRoutine(dispatch, fetchDataRoutine, async () => {
     return await api.fetchData();
   });
-}
+};
 ```
 
 The `dispatchRoutine` function wraps the standard flow for us so that we can focus on what really matters.
@@ -150,7 +150,7 @@ const fetchData = () => async (dispatch: Dispatch, getState: () => RootState) =>
       return new CustomError(error);
     }
   });
-}
+};
 ```
 
 ### Get typed payload in reducer
@@ -162,15 +162,15 @@ According to that, it is safe to put `Action<any>` when define the reducer, e.g,
 ```typescript
 const reducer = (state: State = initState, action: Action<any>): State => {
   // The reducer logic goes here...
-}
+};
 ```
 
-However, we may want to use the type information of payload inside the reducer, so that 4 more functions are there to help: 
+However, we may want to use the type information of payload inside the reducer, so that 4 more functions are there to help:
 
-* `.isSuccessAction`
-* `.isFailureAction`
-* `.getSuccessPayload`
-* `.getFailurePayload`
+- `.isSuccessAction`
+- `.isFailureAction`
+- `.getSuccessPayload`
+- `.getFailurePayload`
 
 So we can write the following code in reducer to get typed payload from `Action<any>`:
 
@@ -186,7 +186,7 @@ if (fetchDataRoutine.isFailureAction(action)) {
 }
 ```
 
-or 
+or
 
 ```typescript
 // payload will be typed as Action<DataType>
