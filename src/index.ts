@@ -3,7 +3,7 @@
 // To get the action type name of each action, call `routine.REQUEST/SUCCESS/FAILURE`
 // To dispatch an action, call `routine.request/success/failure` with payload
 // This is heavily inspired by https://github.com/afitiskin/redux-saga-routines
-import { createAction, Action } from 'redux-actions';
+import { Action, createAction } from 'redux-actions';
 
 // Types
 
@@ -79,6 +79,71 @@ export class ReduxThunkRoutine<P, E extends Error = Error> {
 
 // Helpers
 
+export const createThunkWithArgs = <A, P, E extends Error>(
+  routine: ReduxThunkRoutine<P, E>,
+  getSuccessPayload: (args: A) => Promise<P>,
+  overwritePayload?: {
+    getRequestPayload?: (args: A) => Promise<any>;
+    getFailurePayload?: (error: Error) => Promise<E>;
+  }
+) => {
+  return (args: A) => async (dispatch: any) => {
+    // Get request payload, default is `args`
+    let requestPayload = args;
+    if (
+      overwritePayload &&
+      overwritePayload.getRequestPayload &&
+      typeof overwritePayload.getRequestPayload === 'function'
+    ) {
+      requestPayload = await overwritePayload.getRequestPayload(args);
+    }
+
+    // Dispatch REQUEST action
+    await dispatch(routine.request(requestPayload));
+
+    try {
+      // Get success payload
+      const successPayload = await getSuccessPayload(args);
+
+      // Dispatch SUCCESS action
+      return await dispatch(routine.success(successPayload));
+    } catch (error) {
+      // Get failure payload, default is the caught `Error`
+      let failurePayload = error;
+      if (
+        overwritePayload &&
+        overwritePayload.getFailurePayload &&
+        typeof overwritePayload.getFailurePayload === 'function'
+      ) {
+        failurePayload = await overwritePayload.getFailurePayload(error);
+      }
+
+      // Dispatch FAILURE action
+      await dispatch(routine.failure(failurePayload));
+
+      // Re-throw error
+      throw failurePayload;
+    }
+  };
+};
+
+export const createThunkWithoutArgs = <P, E extends Error>(
+  routine: ReduxThunkRoutine<P, E>,
+  getSuccessPayload: () => Promise<P>,
+  overwritePayload?: {
+    getRequestPayload?: () => Promise<any>;
+    getFailurePayload?: (error: Error) => Promise<E>;
+  }
+) => {
+  return createThunkWithArgs<void, P, E>(routine, getSuccessPayload, overwritePayload);
+};
+
+/**
+ * @deprecated Use `createThunk` instead
+ * @param dispatch
+ * @param routine
+ * @param executor
+ */
 export const dispatchRoutine = async <P, E extends Error>(
   dispatch: any,
   routine: ReduxThunkRoutine<P, E>,
@@ -92,17 +157,25 @@ export const dispatchRoutine = async <P, E extends Error>(
     const payload = isPlainExecutor(executor) ? await executor() : await executor.getSuccessPayload();
     return await dispatch(routine.success(payload));
   } catch (error) {
-    const failuerPayload =
+    const failurePayload =
       isComposedExecutor(executor) && executor.getFailurePayload ? executor.getFailurePayload(error) : error;
-    await dispatch(routine.failure(failuerPayload));
-    throw failuerPayload;
+    await dispatch(routine.failure(failurePayload));
+    throw failurePayload;
   }
 };
 
+/**
+ * @deprecated
+ * @param executor
+ */
 const isComposedExecutor = <P, E extends Error>(executor: Executor<P, E>): executor is ComposedExecutor<P, E> => {
   return typeof executor === 'object';
 };
 
+/**
+ * @deprecated
+ * @param executor
+ */
 const isPlainExecutor = <P, E extends Error>(executor: Executor<P, E>): executor is PlainExecutor<P> => {
   return typeof executor === 'function';
 };

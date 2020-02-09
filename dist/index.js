@@ -57,6 +57,47 @@ class ReduxThunkRoutine {
 }
 exports.ReduxThunkRoutine = ReduxThunkRoutine;
 // Helpers
+exports.createThunkWithArgs = (routine, getSuccessPayload, overwritePayload) => {
+    return (args) => (dispatch) => __awaiter(void 0, void 0, void 0, function* () {
+        // Get request payload, default is `args`
+        let requestPayload = args;
+        if (overwritePayload &&
+            overwritePayload.getRequestPayload &&
+            typeof overwritePayload.getRequestPayload === 'function') {
+            requestPayload = yield overwritePayload.getRequestPayload(args);
+        }
+        // Dispatch REQUEST action
+        yield dispatch(routine.request(requestPayload));
+        try {
+            // Get success payload
+            const successPayload = yield getSuccessPayload(args);
+            // Dispatch SUCCESS action
+            return yield dispatch(routine.success(successPayload));
+        }
+        catch (error) {
+            // Get failure payload, default is the caught `Error`
+            let failurePayload = error;
+            if (overwritePayload &&
+                overwritePayload.getFailurePayload &&
+                typeof overwritePayload.getFailurePayload === 'function') {
+                failurePayload = yield overwritePayload.getFailurePayload(error);
+            }
+            // Dispatch FAILURE action
+            yield dispatch(routine.failure(failurePayload));
+            // Re-throw error
+            throw failurePayload;
+        }
+    });
+};
+exports.createThunkWithoutArgs = (routine, getSuccessPayload, overwritePayload) => {
+    return exports.createThunkWithArgs(routine, getSuccessPayload, overwritePayload);
+};
+/**
+ * @deprecated Use `createThunk` instead
+ * @param dispatch
+ * @param routine
+ * @param executor
+ */
 exports.dispatchRoutine = (dispatch, routine, executor) => __awaiter(void 0, void 0, void 0, function* () {
     const requestPayload = isComposedExecutor(executor) && executor.getRequestPayload ? executor.getRequestPayload() : undefined;
     yield dispatch(routine.request(requestPayload));
@@ -65,14 +106,22 @@ exports.dispatchRoutine = (dispatch, routine, executor) => __awaiter(void 0, voi
         return yield dispatch(routine.success(payload));
     }
     catch (error) {
-        const failuerPayload = isComposedExecutor(executor) && executor.getFailurePayload ? executor.getFailurePayload(error) : error;
-        yield dispatch(routine.failure(failuerPayload));
-        throw failuerPayload;
+        const failurePayload = isComposedExecutor(executor) && executor.getFailurePayload ? executor.getFailurePayload(error) : error;
+        yield dispatch(routine.failure(failurePayload));
+        throw failurePayload;
     }
 });
+/**
+ * @deprecated
+ * @param executor
+ */
 const isComposedExecutor = (executor) => {
     return typeof executor === 'object';
 };
+/**
+ * @deprecated
+ * @param executor
+ */
 const isPlainExecutor = (executor) => {
     return typeof executor === 'function';
 };

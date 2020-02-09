@@ -25,6 +25,20 @@ export declare class ReduxThunkRoutine<P, E extends Error = Error> {
     getSuccessPayload: (action: Action<any>) => P;
     getFailurePayload: (action: Action<any>) => E;
 }
+export declare const createThunkWithArgs: <A, P, E extends Error>(routine: ReduxThunkRoutine<P, E>, getSuccessPayload: (args: A) => Promise<P>, overwritePayload?: {
+    getRequestPayload?: ((args: A) => Promise<any>) | undefined;
+    getFailurePayload?: ((error: Error) => Promise<E>) | undefined;
+} | undefined) => (args: A) => (dispatch: any) => Promise<any>;
+export declare const createThunkWithoutArgs: <P, E extends Error>(routine: ReduxThunkRoutine<P, E>, getSuccessPayload: () => Promise<P>, overwritePayload?: {
+    getRequestPayload?: (() => Promise<any>) | undefined;
+    getFailurePayload?: ((error: Error) => Promise<E>) | undefined;
+} | undefined) => (args: void) => (dispatch: any) => Promise<any>;
+/**
+ * @deprecated Use `createThunk` instead
+ * @param dispatch
+ * @param routine
+ * @param executor
+ */
 export declare const dispatchRoutine: <P, E extends Error>(dispatch: any, routine: ReduxThunkRoutine<P, E>, executor: Executor<P, E>) => Promise<any>;
 export declare const createThunkRoutine: <P, E extends Error = Error>(routineType: string) => ReduxThunkRoutine<P, E>;
 /**
