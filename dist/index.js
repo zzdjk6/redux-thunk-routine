@@ -15,38 +15,89 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // To dispatch an action, call `routine.request/success/failure` with payload
 // This is heavily inspired by https://github.com/afitiskin/redux-saga-routines
 const redux_actions_1 = require("redux-actions");
-// Classes
+// Class
+/**
+ * A routine is an instance of this generic class
+ */
 class ReduxThunkRoutine {
     constructor(routineType) {
+        /**
+         * Action creator for request action
+         * @param payload
+         */
         this.request = (payload) => {
             const actionCreator = redux_actions_1.createAction(this.REQUEST);
             return actionCreator(payload);
         };
+        /**
+         * Action creator for success action
+         * @param payload
+         */
         this.success = (payload) => {
             const actionCreator = redux_actions_1.createAction(this.SUCCESS);
             return actionCreator(payload);
         };
+        /**
+         * Action creator for failure action
+         * @param payload
+         */
         this.failure = (payload) => {
             const actionCreator = redux_actions_1.createAction(this.FAILURE);
             return actionCreator(payload);
         };
+        /**
+         * Detect if a given action is the request action of this routine
+         * @param action
+         */
+        this.isRequestAction = (action) => {
+            return action.type === this.REQUEST;
+        };
+        /**
+         * Detect if a given action is the success action of this routine
+         * @param action
+         */
         this.isSuccessAction = (action) => {
             return action.type === this.SUCCESS;
         };
+        /**
+         * Detect if a given action is the failure action of this routine
+         * @param action
+         */
         this.isFailureAction = (action) => {
             return action.type === this.FAILURE;
         };
-        this.getSuccessPayload = (action) => {
-            if (this.isSuccessAction(action)) {
-                return action.payload;
+        /**
+         * Get typed request payload from a given action, throw TypeError if the action does not match
+         * @param action
+         * @throws TypeError
+         */
+        this.getRequestPayload = (action) => {
+            if (!this.isRequestAction(action)) {
+                throw new TypeError();
             }
-            throw new TypeError();
+            return action.payload;
         };
-        this.getFailurePayload = (action) => {
-            if (this.isFailureAction(action)) {
-                return action.payload;
+        /**
+         * Get typed success payload from a given action, throw TypeError if the action does not match
+         * @param action
+         * @throws TypeError
+         */
+        this.getSuccessPayload = (action) => {
+            if (!this.isSuccessAction(action)) {
+                throw new TypeError();
             }
-            throw new TypeError();
+            return action.payload;
+        };
+        /**
+         * Get typed failure payload from a given action, throw TypeError if the action does not match
+         * @param action
+         * @throws TypeError
+         */
+        this.getFailurePayload = (action) => {
+            if (!this.isFailureAction(action)) {
+                throw new TypeError();
+            }
+            return action.payload;
         };
         this.actionType = routineType;
         this.routineType = routineType;
@@ -57,7 +108,20 @@ class ReduxThunkRoutine {
 }
 exports.ReduxThunkRoutine = ReduxThunkRoutine;
 // Helpers
-exports.createThunkWithArgs = (routine, getSuccessPayload, overwritePayload) => {
+/**
+ * Helper function to create a routine
+ * @param routineType
+ */
+exports.createThunkRoutine = (routineType) => {
+    return new ReduxThunkRoutine(routineType);
+};
+/**
+ * Helper function to create a thunk from a given routine and executor functions
+ * @param routine
+ * @param getSuccessPayload
+ * @param overwritePayload
+ */
+exports.createThunk = (routine, getSuccessPayload, overwritePayload) => {
     return (args) => (dispatch) => __awaiter(void 0, void 0, void 0, function* () {
         // Get request payload, default is `args`
         let requestPayload = args;
@@ -88,9 +152,6 @@ exports.createThunkWithArgs = (routine, getSuccessPayload, overwritePayload) => 
             throw failurePayload;
         }
     });
-};
-exports.createThunkWithoutArgs = (routine, getSuccessPayload, overwritePayload) => {
-    return exports.createThunkWithArgs(routine, getSuccessPayload, overwritePayload);
 };
 /**
  * @deprecated Use `createThunk` instead
@@ -125,23 +186,18 @@ const isComposedExecutor = (executor) => {
 const isPlainExecutor = (executor) => {
     return typeof executor === 'function';
 };
-exports.createThunkRoutine = (routineType) => {
-    return new ReduxThunkRoutine(routineType);
-};
 /**
  * @deprecated
  * Use routine.getSuccessPayload instead
  */
 exports.getTypedPayload = (routine, action) => {
-    const payload = action.payload;
-    return payload;
+    return action.payload;
 };
 /**
  * @deprecated
  * Use routine.getFailurePayload instead
  */
 exports.getTypedError = (routine, action) => {
-    const error = action.payload;
-    return error;
+    return action.payload;
 };
 //# sourceMappingURL=index.js.map

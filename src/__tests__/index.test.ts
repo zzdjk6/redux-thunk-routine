@@ -1,12 +1,11 @@
 import {
   createThunkRoutine,
-  createThunkWithArgs,
-  createThunkWithoutArgs,
+  createThunk,
   dispatchRoutine,
   getTypedError,
   getTypedPayload,
   ReduxThunkRoutine
-} from "../index";
+} from '../index';
 
 test('Routine has correct action name', () => {
   const routine = createThunkRoutine('TEST/MOCK_ROUTINE');
@@ -16,7 +15,7 @@ test('Routine has correct action name', () => {
 });
 
 test('Routine dispatches correct payload', () => {
-  const routine: ReduxThunkRoutine<number> = createThunkRoutine('TEST/MOCK_ROUTINE');
+  const routine: ReduxThunkRoutine<number, Error> = createThunkRoutine('TEST/MOCK_ROUTINE');
 
   expect(routine.request({ requestPayload: 'anything' })).toEqual({
     type: routine.REQUEST,
@@ -36,7 +35,7 @@ test('Routine dispatches correct payload', () => {
   });
 });
 
-test('Get typed payload', () => {
+test('Get typed payload for success action', () => {
   const routine: ReduxThunkRoutine<number> = createThunkRoutine('TEST/MOCK_ROUTINE');
   const action = routine.success(123);
   expect(getTypedPayload(routine, action)).toEqual(123);
@@ -46,7 +45,18 @@ test('Get typed payload', () => {
   expect(() => mismatchingRoutine.getSuccessPayload(action)).toThrow();
 });
 
-test('Get typed error', () => {
+test('Get typed payload for request action', () => {
+  const routine: ReduxThunkRoutine<number, Error> = createThunkRoutine(
+    'TEST/MOCK_ROUTINE'
+  );
+  const action = routine.request({ label: 'hello', value: 321 });
+  expect(routine.getRequestPayload(action)).toEqual({ label: 'hello', value: 321 });
+
+  const mismatchingRoutine: ReduxThunkRoutine<string> = createThunkRoutine('TEST/MIS_MATCHED_ROUTINE');
+  expect(() => mismatchingRoutine.getRequestPayload(action)).toThrow();
+});
+
+test('Get typed payload for failure action', () => {
   class CustomError extends Error {
     name = 'CustomError';
   }
@@ -173,7 +183,7 @@ describe('Helper - Create Thunk Without Args', () => {
   test('without overwrite - success', async () => {
     expect.assertions(2);
 
-    const thunk = createThunkWithoutArgs(routine, async () => {
+    const thunk = createThunk(routine, async () => {
       return await 1;
     });
 
@@ -187,7 +197,7 @@ describe('Helper - Create Thunk Without Args', () => {
     expect.assertions(3);
 
     const error = new Error('I am an Error');
-    const thunk = createThunkWithoutArgs(routine, async () => {
+    const thunk = createThunk(routine, async () => {
       throw error;
     });
 
@@ -204,7 +214,7 @@ describe('Helper - Create Thunk Without Args', () => {
   test('overwrite request payload', async () => {
     expect.assertions(2);
 
-    const thunk = createThunkWithoutArgs(
+    const thunk = createThunk(
       routine,
       async () => {
         return await 1;
@@ -227,7 +237,7 @@ describe('Helper - Create Thunk Without Args', () => {
 
     const error1 = new Error('I am an Error');
     const error2 = new Error('I am another Error');
-    const thunk = createThunkWithoutArgs(
+    const thunk = createThunk(
       routine,
       async () => {
         throw error1;
@@ -265,7 +275,7 @@ describe('Helper - Create Thunk With Args', () => {
   test('without overwrite - success', async () => {
     expect.assertions(2);
 
-    const thunk = createThunkWithArgs(routine, async (str: string) => {
+    const thunk = createThunk(routine, async (str: string) => {
       return str + ' world';
     });
 
@@ -279,7 +289,7 @@ describe('Helper - Create Thunk With Args', () => {
     expect.assertions(3);
 
     const error = new Error('I am an Error');
-    const thunk = createThunkWithArgs(routine, async (str: string) => {
+    const thunk = createThunk(routine, async (str: string) => {
       throw error;
     });
 
@@ -296,7 +306,7 @@ describe('Helper - Create Thunk With Args', () => {
   test('overwrite request payload', async () => {
     expect.assertions(2);
 
-    const thunk = createThunkWithArgs(
+    const thunk = createThunk(
       routine,
       async (str: string) => {
         return str + ' world';
@@ -321,7 +331,7 @@ describe('Helper - Create Thunk With Args', () => {
 
     const error1 = new Error('I am an Error');
     const error2 = new Error('I am another Error');
-    const thunk = createThunkWithArgs(
+    const thunk = createThunk(
       routine,
       async (str: string) => {
         throw error1;
