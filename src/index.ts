@@ -10,7 +10,7 @@ import { Action, createAction } from 'redux-actions';
 /**
  * A routine is an instance of this generic class
  */
-export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
+export class ReduxThunkRoutine<TPayload, TError extends Error = Error> {
   /**
    * The type of routine, used as prefix of generated actions
    */
@@ -58,7 +58,7 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
    * Action creator for success action
    * @param payload
    */
-  success = (payload: PAYLOAD): Action<PAYLOAD> => {
+  success = (payload: TPayload): Action<TPayload> => {
     const actionCreator = createAction(this.SUCCESS);
     return actionCreator(payload);
   };
@@ -67,7 +67,7 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
    * Action creator for failure action
    * @param payload
    */
-  failure = (payload: ERROR): Action<ERROR> => {
+  failure = (payload: TError): Action<TError> => {
     const actionCreator = createAction(this.FAILURE);
     return actionCreator(payload);
   };
@@ -84,7 +84,7 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
    * Detect if a given action is the success action of this routine
    * @param action
    */
-  isSuccessAction = (action: Action<any>): action is Action<PAYLOAD> => {
+  isSuccessAction = (action: Action<any>): action is Action<TPayload> => {
     return action.type === this.SUCCESS;
   };
 
@@ -92,7 +92,7 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
    * Detect if a given action is the failure action of this routine
    * @param action
    */
-  isFailureAction = (action: Action<any>): action is Action<ERROR> => {
+  isFailureAction = (action: Action<any>): action is Action<TError> => {
     return action.type === this.FAILURE;
   };
 
@@ -114,7 +114,7 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
    * @param action
    * @throws TypeError
    */
-  getSuccessPayload = (action: Action<any>): PAYLOAD => {
+  getSuccessPayload = (action: Action<any>): TPayload => {
     if (!this.isSuccessAction(action)) {
       throw new TypeError();
     }
@@ -127,7 +127,7 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
    * @param action
    * @throws TypeError
    */
-  getFailurePayload = (action: Action<any>): ERROR => {
+  getFailurePayload = (action: Action<any>): TError => {
     if (!this.isFailureAction(action)) {
       throw new TypeError();
     }
@@ -142,27 +142,27 @@ export class ReduxThunkRoutine<PAYLOAD, ERROR extends Error = Error> {
  * Helper function to create a routine
  * @param routineType
  */
-export const createThunkRoutine = <PAYLOAD, ERROR extends Error = Error>(
+export const createThunkRoutine = <TPayload, TError extends Error = Error>(
   routineType: string
-): ReduxThunkRoutine<PAYLOAD, ERROR> => {
+): ReduxThunkRoutine<TPayload, TError> => {
   return new ReduxThunkRoutine(routineType);
 };
 
 /**
- * Helper function to create a thunk from a given routine and executor functions
+ * Helper function to generate a thunk action creator from the given routine and executor function
  * @param routine
  * @param getSuccessPayload
  * @param overwritePayload
  */
-export const createThunk = <PAYLOAD, ERROR extends Error = Error, ARGUMENTS = void>(
-  routine: ReduxThunkRoutine<PAYLOAD, ERROR>,
-  getSuccessPayload: (args: ARGUMENTS) => Promise<PAYLOAD>,
+export const getThunkActionCreator = <TPayload, TError extends Error = Error, TArguments = void>(
+  routine: ReduxThunkRoutine<TPayload, TError>,
+  getSuccessPayload: (args: TArguments) => Promise<TPayload>,
   overwritePayload?: {
-    getRequestPayload?: (args: ARGUMENTS) => Promise<any>;
-    getFailurePayload?: (error: Error) => Promise<ERROR>;
+    getRequestPayload?: (args: TArguments) => Promise<any>;
+    getFailurePayload?: (error: Error) => Promise<TError>;
   }
 ) => {
-  return (args: ARGUMENTS) => async (dispatch: any) => {
+  return (args: TArguments) => async (dispatch: any) => {
     // Get request payload, default is `args`
     let requestPayload: any = args;
     if (
@@ -203,15 +203,15 @@ export const createThunk = <PAYLOAD, ERROR extends Error = Error, ARGUMENTS = vo
 };
 
 /**
- * @deprecated Use `createThunk` instead
+ * @deprecated Use `getThunkActionCreator` instead
  * @param dispatch
  * @param routine
  * @param executor
  */
-export const dispatchRoutine = async <PAYLOAD, ERROR extends Error>(
+export const dispatchRoutine = async <TPayload, TError extends Error>(
   dispatch: any,
-  routine: ReduxThunkRoutine<PAYLOAD, ERROR>,
-  executor: Executor<PAYLOAD, ERROR>
+  routine: ReduxThunkRoutine<TPayload, TError>,
+  executor: Executor<TPayload, TError>
 ) => {
   const requestPayload =
     isComposedExecutor(executor) && executor.getRequestPayload ? executor.getRequestPayload() : undefined;
@@ -232,9 +232,9 @@ export const dispatchRoutine = async <PAYLOAD, ERROR extends Error>(
  * @deprecated
  * @param executor
  */
-const isComposedExecutor = <PAYLOAD, ERROR extends Error>(
-  executor: Executor<PAYLOAD, ERROR>
-): executor is ComposedExecutor<PAYLOAD, ERROR> => {
+const isComposedExecutor = <TPayload, TError extends Error>(
+  executor: Executor<TPayload, TError>
+): executor is ComposedExecutor<TPayload, TError> => {
   return typeof executor === 'object';
 };
 
@@ -242,9 +242,9 @@ const isComposedExecutor = <PAYLOAD, ERROR extends Error>(
  * @deprecated
  * @param executor
  */
-const isPlainExecutor = <PAYLOAD, ERROR extends Error>(
-  executor: Executor<PAYLOAD, ERROR>
-): executor is PlainExecutor<PAYLOAD> => {
+const isPlainExecutor = <TPayload, TError extends Error>(
+  executor: Executor<TPayload, TError>
+): executor is PlainExecutor<TPayload> => {
   return typeof executor === 'function';
 };
 
@@ -252,19 +252,19 @@ const isPlainExecutor = <PAYLOAD, ERROR extends Error>(
  * @deprecated
  * Use routine.getSuccessPayload instead
  */
-export const getTypedPayload = <PAYLOAD>(routine: ReduxThunkRoutine<PAYLOAD>, action: Action<any>): PAYLOAD => {
-  return action.payload as PAYLOAD;
+export const getTypedPayload = <TPayload>(routine: ReduxThunkRoutine<TPayload>, action: Action<any>): TPayload => {
+  return action.payload as TPayload;
 };
 
 /**
  * @deprecated
  * Use routine.getFailurePayload instead
  */
-export const getTypedError = <ERROR extends Error = Error>(
-  routine: ReduxThunkRoutine<any, ERROR>,
+export const getTypedError = <TError extends Error = Error>(
+  routine: ReduxThunkRoutine<any, TError>,
   action: any
-): ERROR => {
-  return action.payload as ERROR;
+): TError => {
+  return action.payload as TError;
 };
 
 // Types
@@ -272,18 +272,18 @@ export const getTypedError = <ERROR extends Error = Error>(
 /**
  * @deprecated
  */
-export type ComposedExecutor<PAYLOAD, ERROR extends Error = Error> = {
+export type ComposedExecutor<TPayload, TError extends Error = Error> = {
   getRequestPayload?: () => any;
-  getSuccessPayload: () => Promise<PAYLOAD>;
-  getFailurePayload?: (error: Error) => ERROR;
+  getSuccessPayload: () => Promise<TPayload>;
+  getFailurePayload?: (error: Error) => TError;
 };
 
 /**
  * @deprecated
  */
-export type PlainExecutor<PAYLOAD> = () => Promise<PAYLOAD>;
+export type PlainExecutor<TPayload> = () => Promise<TPayload>;
 
 /**
  * @deprecated
  */
-export type Executor<PAYLOAD, ERROR extends Error = Error> = PlainExecutor<PAYLOAD> | ComposedExecutor<PAYLOAD, ERROR>;
+export type Executor<TPayload, TError extends Error = Error> = PlainExecutor<TPayload> | ComposedExecutor<TPayload, TError>;

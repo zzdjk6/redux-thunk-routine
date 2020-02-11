@@ -116,12 +116,12 @@ exports.createThunkRoutine = (routineType) => {
     return new ReduxThunkRoutine(routineType);
 };
 /**
- * Helper function to create a thunk from a given routine and executor functions
+ * Helper function to generate a thunk action creator from the given routine and executor function
  * @param routine
  * @param getSuccessPayload
  * @param overwritePayload
  */
-exports.createThunk = (routine, getSuccessPayload, overwritePayload) => {
+exports.getThunkActionCreator = (routine, getSuccessPayload, overwritePayload) => {
     return (args) => (dispatch) => __awaiter(void 0, void 0, void 0, function* () {
         // Get request payload, default is `args`
         let requestPayload = args;
@@ -154,7 +154,7 @@ exports.createThunk = (routine, getSuccessPayload, overwritePayload) => {
     });
 };
 /**
- * @deprecated Use `createThunk` instead
+ * @deprecated Use `getThunkActionCreator` instead
  * @param dispatch
  * @param routine
  * @param executor

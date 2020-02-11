@@ -126,16 +126,16 @@ For example, the type of `fetchDataRoutine.success` is generated as `(payload: D
 Instead of dispatching 3 actions in every `thunk` manually as shown above, we can replace it using the following code:
 
 ```typescript
-const fetchData = createThunk(fetchDataRoutine, async (id: number) => {
+const fetchData = getThunkActionCreator(fetchDataRoutine, async (id: number) => {
   return await api.fetchData(id);
 });
 ```
 
-The `createThunk` helper function generate the standard flow of dispatching actions for us so that we can focus on what is really special to each `thunk`.
+The `getThunkActionCreator` helper function generate the standard flow of dispatching actions for us so that we can focus on what is really special to each `thunk`.
 It also accept a variation which allow us to overwrite how to generate payload for request action and failure action in the standard flow:
 
 ```typescript
-const fetchData = createThunk(
+const fetchData = getThunkActionCreator(
   fetchDataRoutine,
   async (id: number) => {
     return await api.fetchData(id);
@@ -207,17 +207,17 @@ type ValidAction =
   | ReturnType<typeof fetchDataRoutine.failure>;
 ```
 
-## How about using `getState` with `createThunk`?
+## How about using `getState` with `getThunkActionCreator`?
 
 Well, there is a debate of using `getState` in action creators and it was indexed in [this blog](https://blog.isquaredsoftware.com/2017/01/idiomatic-redux-thoughts-on-thunks-sagas-abstraction-and-reusability/).
 
-IMO, it is better to let the component to select required states before dispatching a `thunk` as it adds certainty to the `thunk` and it is easier to test without accessing state in action creators, so that there is no `getState` function passed to the executor function when using `createThunk`.
+IMO, it is better to let the component to select required states before dispatching a `thunk` as it adds certainty to the `thunk` and it is easier to test without accessing state in action creators, so that there is no `getState` function passed to the executor function when using `getThunkActionCreator`.
 
 However, if it is really needed, calling `getState` can be done via a wrapped `thunk`:
 
 ```typescript
 // Imagine we have a created thunk from routine
-const fetchData = createThunk(fetchDataRoutine, async (id: number) => {
+const fetchData = getThunkActionCreator(fetchDataRoutine, async (id: number) => {
   return await api.fetchData(id);
 });
 
