@@ -1,5 +1,17 @@
 # redux-thunk-routine [![Build Status](https://travis-ci.com/zzdjk6/redux-thunk-routine.svg?branch=master)](https://travis-ci.com/zzdjk6/redux-thunk-routine) [![Coverage Status](https://coveralls.io/repos/github/zzdjk6/redux-thunk-routine/badge.svg)](https://coveralls.io/github/zzdjk6/redux-thunk-routine)
 
+## How to use it
+
+```shell
+npm install redux-thunk-routine
+```
+
+or
+
+```shell
+yarn add redux-thunk-routine
+```
+
 ## Motivation
 
 `redux-thunk` gives us the ability to create asynchonous actions, but do you feel that you are writing boilerplate code again and again?
