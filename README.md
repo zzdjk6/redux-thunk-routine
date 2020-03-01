@@ -14,7 +14,7 @@ yarn add redux-thunk-routine
 
 ## Motivation
 
-`redux-thunk` gives us the ability to create asynchonous actions, but do you feel that you are writing boilerplate code again and again?
+`redux-thunk` gives us the ability to create asynchronous actions, but do you feel that you are writing boilerplate code again and again?
 
 Do you feel things are getting even worse when you trying to add static typing?
 
@@ -24,14 +24,16 @@ So what is a `routine`? Let's explain it with an example.
 
 ## Understand routine in 1 minute
 
-Imagine that we are creating an asynchonous action to fetch data using API, we might write the code like below:
+Imagine that we are creating an asynchronous action to fetch data using API, we might write the code like below:
 
 ```typescript
 // 1. Define the constants that are used as action types
 const FETCH_DATA_REQUEST = 'FETCH_DATA/REQUEST';
 const FETCH_DATA_SUCCESS = 'FETCH_DATA/SUCCESS';
 const FETCH_DATA_FAILURE = 'FETCH_DATA/FAILURE';
+```
 
+```typescript
 // 2. Define synchronous action creators (following Flux Standard Action)
 const fetchDataRequest = (payload?: any) => {
   if (typeof payload === 'undefined') {
@@ -58,12 +60,16 @@ const fetchDataFailure = (payload: Error) => {
     error: true
   };
 };
+```
 
-// There is a simplied version if you are using `redux-action`
-// const fetchDataRequest: (payload?: any) => Action<any> = createAction(FETCH_DATA_REQUEST);
-// const fetchDataSuccess: (payload: DataType) => Action<DataType> = createAction(FETCH_DATA_SUCCESS);
-// const fetchDataFailure: (payload: Error) => Action<Error> = createAction(FETCH_DATA_FAILURE);
+```typescript
+// There is a simplied version to define action creators using `redux-action`
+const fetchDataRequest: (payload?: any) => Action<any> = createAction(FETCH_DATA_REQUEST);
+const fetchDataSuccess: (payload: DataType) => Action<DataType> = createAction(FETCH_DATA_SUCCESS);
+const fetchDataFailure: (payload: Error) => Action<Error> = createAction(FETCH_DATA_FAILURE);
+```
 
+```typescript
 // 3. Define thunk action creator
 const fetchData = (id: number) => async (dispatch: Dispatch) => {
   await dispatch(fetchDataRequest(id));
