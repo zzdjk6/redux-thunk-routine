@@ -1,6 +1,6 @@
 {
   "name": "redux-thunk-routine",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Routine for redux-thunk",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,7 @@
     "@types/redux-actions": "^2.6.1",
     "babel-jest": "^24.9.0",
     "coveralls": "^3.0.7",
-    "jest": "^24.9.0",
+    "jest": "^25.1.0",
     "prettier": "^1.18.2",
     "typescript": "^3.7.2"
   },

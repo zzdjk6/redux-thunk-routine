@@ -256,6 +256,32 @@ describe('Helper - Get Thunk Action Creator Without Args', () => {
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request(), routine.failure(error2)]);
   });
+
+  test('disable rethrow error', async () => {
+    expect.assertions(3);
+
+    const error = new Error('I am an Error');
+    const thunk = getThunkActionCreator(
+        routine,
+        async () => {
+          throw error;
+        },
+        {
+          rethrowError: false
+        }
+    );
+
+    let caughtError = null;
+    try {
+      await thunk()(dispatch);
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeNull();
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
+  });
 });
 
 describe('Helper - Get Thunk Action Creator With Args', () => {
@@ -349,5 +375,31 @@ describe('Helper - Get Thunk Action Creator With Args', () => {
 
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request('hello'), routine.failure(error2)]);
+  });
+
+  test('disable rethrow error', async () => {
+    expect.assertions(3);
+
+    const error = new Error('I am an Error');
+    const thunk = getThunkActionCreator(
+        routine,
+        async () => {
+          throw error;
+        },
+        {
+          rethrowError: false
+        }
+    );
+
+    let caughtError = null;
+    try {
+      await thunk()(dispatch);
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeNull();
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
   });
 });

@@ -83,11 +83,12 @@ export declare const createThunkRoutine: <TPayload, TError extends Error = Error
  * Helper function to generate a thunk action creator from the given routine and executor function
  * @param routine
  * @param getSuccessPayload
- * @param overwritePayload
+ * @param options
  */
-export declare const getThunkActionCreator: <TPayload, TError extends Error = Error, TArguments = void>(routine: ReduxThunkRoutine<TPayload, TError>, getSuccessPayload: (args: TArguments) => Promise<TPayload>, overwritePayload?: {
+export declare const getThunkActionCreator: <TPayload, TError extends Error = Error, TArguments = void>(routine: ReduxThunkRoutine<TPayload, TError>, getSuccessPayload: (args: TArguments) => Promise<TPayload>, options?: {
     getRequestPayload?: ((args: TArguments) => Promise<any>) | undefined;
     getFailurePayload?: ((error: Error) => Promise<TError>) | undefined;
+    rethrowError?: boolean | undefined;
 } | undefined) => (args: TArguments) => (dispatch: any) => Promise<any>;
 /**
  * @deprecated Use `getThunkActionCreator` instead

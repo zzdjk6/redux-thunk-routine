@@ -14,91 +14,145 @@ yarn add redux-thunk-routine
 
 ## Motivation
 
-`redux-thunk` gives us the ability to create asynchronous actions for `redux`, that's awesome! However, it seems that we have to write a lot of boilerplate code for each asynchronous action, and things are even worse when adding static type checking (i.e. TypeScript).
+I use `redux` and `redux-thunk` in my day-to-day work, and they do really great job to help manage the states of my application.
 
-Inspired by [redux-saga-routines](https://github.com/afitiskin/redux-saga-routines) which is a library for `redux-saga`, we have [redux-thunk-routine](https://github.com/zzdjk6/redux-thunk-routine) for `redux-thunk`!
+However, I find that I have to write a lot of boilerplate code for each asynchronous action, and it is even more tedious to add static type checking (i.e. use TypeScript).
 
-So what is a `routine`? Let's explain it with an example.
+That's why I created `redux-thunk-routine`, a small libary to reduce the boilerplate and improve the support of static typing.
+
+## Elevator Pitch
+
+- This libary can save your time (less boilerplate and better static typing)
+- It can also generalize the flow of dispatching actions (refer: [Global Loading & Error State](https://github.com/zzdjk6/demo-global-loading-state))
+- There is no harm to your existing code when you add this library
+- It comes with drop-in replacement to your hand-writen code as well as helpers to simplify more
+- Test Coverage is 100%
 
 ## Understand routine in 1 minute
 
-Imagine that we are creating an asynchronous action to fetch data using API, we might write the code like below:
+So what is a `routine`? Let's explain it with an example.
+
+Imagine that we are creating an asynchronous action to fetch data using API, we might write the typical code like below:
 
 ```typescript
-// 1. Define the constants that are used as action types
+// 1. Define Constants
+
+// These constants are used as action types
 const FETCH_DATA_REQUEST = 'FETCH_DATA/REQUEST';
 const FETCH_DATA_SUCCESS = 'FETCH_DATA/SUCCESS';
 const FETCH_DATA_FAILURE = 'FETCH_DATA/FAILURE';
 ```
 
 ```typescript
-// 2. Define synchronous action creators (following Flux Standard Action)
-const fetchDataRequest = (payload?: any) => {
-  if (typeof payload === 'undefined') {
-    return {
-      type: FETCH_DATA_REQUEST
-    };
-  }
-  return {
-    type: FETCH_DATA_REQUEST,
-    payload
-  };
-};
-const fetchDataSuccess = (payload: DataType) => {
-  return {
-    type: FETCH_DATA_SUCCESS,
-    payload
-  };
-};
-const fetchDataFailure = (payload: Error) => {
-  return {
-    type: FETCH_DATA_FAILURE,
-    payload,
-    error: true
-  };
-};
+// 2. Define Synchronous Action Creators
+
+// We are creating Flux Standard Actions
+const fetchDataRequest = (payload?: any) => ({
+  type: FETCH_DATA_REQUEST,
+  payload
+});
+
+const fetchDataSuccess = (payload: DataType) => ({
+  type: FETCH_DATA_SUCCESS,
+  payload
+});
+
+const fetchDataFailure = (payload: Error) => ({
+  type: FETCH_DATA_FAILURE,
+  payload,
+  error: true
+});
 
 // Note: There is a simplied version below to define action creators using `redux-action` library.
 // But we still have to define the types manually for each of them
 const fetchDataRequest: (payload?: any) => Action<any> = createAction(FETCH_DATA_REQUEST);
 const fetchDataSuccess: (payload: DataType) => Action<DataType> = createAction(FETCH_DATA_SUCCESS);
 const fetchDataFailure: (payload: Error) => Action<Error> = createAction(FETCH_DATA_FAILURE);
+```
 
+```typescript
 // 3. Define thunk action creator
-const fetchData = (id: number) => async (dispatch: Dispatch) => {
-  await dispatch(fetchDataRequest(id));
-  try {
-    const data = await api.fetchData(id);
-    return await dispatch(fetchDataSuccess(data));
-  } catch (e) {
-    await dispatch(fetchDataFailure(e));
-    throw e;
-  }
+
+// The outer function is called "Thunk Action Creator"
+const fetchData = (id: number) => {
+  // The inner function is called "Thunk Action"
+  return async (dispatch: Dispatch) => {
+    dispatch(fetchDataRequest(id));
+    try {
+      const data = await api.fetchData(id);
+      return dispatch(fetchDataSuccess(data));
+    } catch (e) {
+      dispatch(fetchDataFailure(e));
+      throw e;
+    }
+  };
+};
+```
+
+```typescript
+// 4. Handle actions in reducers
+
+// Define Types for actions
+type FetchDataRequestAction = {
+  type: typeof FETCH_DATA_REQUEST;
+  payload: any;
 };
 
-// 4. Handle actions in reducers
-if (action.type === FETCH_DATA_REQUEST) {
-  return {
-    ...state,
-    isFetching: true,
-    error: null
-  };
-}
-if (action.type === FETCH_DATA_SUCCESS) {
-  return {
-    ...state,
-    isFetching: false,
-    data: action.payload,
-    error: null
-  };
-}
-if (action.type === FETCH_DATA_FAILURE) {
-  return {
-    ...state,
-    isFetching: false,
-    error: action.payload
-  };
-}
+type FetchDataSuccessAction = {
+  type: typeof FETCH_DATA_SUCCESS;
+  payload: DataType;
+};
+
+type FetchDataFailureAction = {
+  type: typeof FETCH_DATA_FAILURE;
+  payload: Error;
+  error: boolean;
+};
+
+// Make a union type
+type ValidAction = FetchDataRequestAction | FetchDataSuccessAction | FetchDataFailureAction;
+
+// In each condition branch, the type of action will be inferred
+const reducer = (state: State = {}, action: ValidAction): State => {
+  // When receive REQUEST action, switch on the loading flag and clear the error
+  if (action.type === FETCH_DATA_REQUEST) {
+    // action: FetchDataRequestAction
+    return {
+      ...state,
+      isFetching: true,
+      error: null
+    };
+  }
+
+  // When receive SUCCESS action, store the data, switch off the loading flag, and clear the error
+  if (action.type === FETCH_DATA_SUCCESS) {
+    // action: FetchDataSuccessAction
+    const data = action.payload;
+    return {
+      ...state,
+      isFetching: false,
+      data: action.payload,
+      error: null
+    };
+  }
+
+  // When receive FAILURE action, store the error and switch off the loading flag
+  if (action.type === FETCH_DATA_FAILURE) {
+    // action: FetchDataFailureAction
+    const error = action.payload;
+    return {
+      ...state,
+      isFetching: false,
+      error: action.payload
+    };
+  }
+};
+```
+
+```typescript
+// 5. Dispatch the thunk action to start the asynchronous journey
+
+store.dispatch(fetchData(id));
 ```
 
 Looking at the example, we see that for every asynchronous action:
@@ -106,89 +160,72 @@ Looking at the example, we see that for every asynchronous action:
 1. We have to define 3 constants: `REQUEST`, `SUCCESS`, `FAILURE`
 2. We have to define 3 synchronous action creators: `request`, `success`, `failure`
 3. We have to write same logic flow of dispatching actions: request -> side effects -> success/failure
+4. We have to write a lot of type definitions to make the static type checking works
 
 What if I tell you that there is a smart thing called `routine` to wipe these repetitive work out?
 
-Let's have a look at the `routine` version of the previous example:
+If we rewrite the previous example using `routine`, we can have a minimum example like below:
 
 ```typescript
 // 1. Define a routine
 const fetchDataRoutine = createThunkRoutine<DataType>('FETCH_DATA');
-// Or explicitly decalre the error type if need
-// const fetchDataRoutine: createThunkRoutine<DataType, Error>('FETCH_DATA')
 
-// 2. Define the thunk action creator
-const fetchData = (id: number) => async (dispatch: Dispatch) => {
-  await dispatch(fetchDataRoutine.request(id));
-  try {
-    const data = await api.fetchData(id);
-    return await dispatch(fetchDataRoutine.success(data));
-  } catch (e) {
-    await dispatch(fetchDataRoutine.failure(e));
-    throw e;
+// 2. Get the thunk action creator
+const fetchData = getThunkActionCreator(fetchDataRoutine, async (id: number) => {
+  return await api.fetchData(id);
+});
+
+// 3. Write the reducer
+const reducer = (state: State = {}, action: Action<any>): State => {
+  // We only focus on SUCCESS action here
+  // We will discuss how to deal with REQUEST and ERROR actions later (using a more elegant way)
+  if (fetchDataRoutine.isSuccessAction(action)) {
+    const data = action.payload;
+    return {
+      ...state,
+      data
+    };
   }
 };
-// Note: The code above can be simplified one step further using
-// `getThunkActionCreator` like below (we will discuss it later):
-const fetchData = getThunkActionCreator(fetchDataRoutine, api.fetchData);
 
-// 3. Handle actions in reducers
-// We will discuss type guard helper functions later
-if (action.type === fetchDataRoutine.REQUEST) {
-  return {
-    ...state,
-    isFetching: true,
-    error: null
-  };
-}
-if (action.type === fetchDataRoutine.SUCCESS) {
-  return {
-    ...state,
-    isFetching: false,
-    data: action.payload,
-    error: null
-  };
-}
-if (action.type === fetchDataRoutine.FAILURE) {
-  return {
-    ...state,
-    isFetching: false,
-    error: action.payload
-  };
-}
+// 4. Dispatch the thunk action
+store.dispatch(fetchData(id));
 ```
 
-See, there is no need to define constants and synchronous action creators:
+## API Explain
 
-- Each `routine` has 3 defined action types:
+### Define Routine
+
+We only need to provide 2 basic information: type of success payload and a string as routine type.
+
+```typescript
+const fetchDataRoutine = createThunkRoutine<DataType>('FETCH_DATA');
+```
+
+Option: we can explicitly decalre the error type if need
+
+```typescript
+const fetchDataRoutine: createThunkRoutine<DataType, Error>('FETCH_DATA')
+```
+
+When define a `routine`, we have the following things automatically generated for us:
+
+- 3 action types:
   - `routine.REQUEST`
   - `routine.SUCCESS`
   - `routine.FAILURE`
-- Each `routine` has 3 defined action creators (their types are also defined clearly):
+- 3 synchronous action creators:
   - `routine.request()`
   - `routine.success()`
   - `routine.failure()`
+- 3 methods to match actions (also as type guards):
+  - `routine.isRequestAction()`
+  - `routine.isSuccessAction()`
+  - `routine.isFailureAction()`
 
-## Further Discussion
+### Get Thunk Action Creator
 
-### Remove boilerplate from the thunk action creator
-
-In the example, we dispatch 3 synchronous actions mannually:
-
-```typescript
-const fetchData = (id: number) => async (dispatch: Dispatch) => {
-  await dispatch(fetchDataRoutine.request(id));
-  try {
-    const data = await api.fetchData(id);
-    return await dispatch(fetchDataRoutine.success(data));
-  } catch (e) {
-    await dispatch(fetchDataRoutine.failure(e));
-    throw e;
-  }
-};
-```
-
-By using a helper function called `getThunkActionCreator`, we could simplied it to the code below:
+When use helper function, we just need to provide the routine and the async function to create success payload:
 
 ```typescript
 const fetchData = getThunkActionCreator(fetchDataRoutine, async (id: number) => {
@@ -196,17 +233,26 @@ const fetchData = getThunkActionCreator(fetchDataRoutine, async (id: number) => 
 });
 ```
 
-Even better, we could get the code compact as one line:
+> Note: if you have multiple arguments to pass here, you can pack them as an object. (e.g., {arg1: 1, arg2: 'B'}). It sounds like "named arguments" in some other languages, and it is easier to infer type signature of the generated Thunk Action in this way.
+
+It is equal to use the synchronous action creators manually:
 
 ```typescript
-const fetchData = getThunkActionCreator(fetchDataRoutine, api.fetchData);
+const fetchData = (id: number) => async (dispatch: Dispatch) => {
+  dispatch(fetchDataRoutine.request(id));
+  try {
+    const data = await api.fetchData(id);
+    return dispatch(fetchDataRoutine.success(data));
+  } catch (e) {
+    dispatch(fetchDataRoutine.failure(e));
+    throw e;
+  }
+};
 ```
 
-The actual flow is the same, but we write much less code.
+Obviously, we write much less code using the helper function, but you can always fallback when you have such needs.
 
-That is, we could focus on the side effects of each asynchronous action instead of the general flow.
-
-Apart from that, the helper function `getThunkActionCreator` also provides an optional 3rd parameter which allows us to overwrite how the payload for request action and failure action are generated:
+Apart from that, the helper function `getThunkActionCreator` also provides an optional 3rd parameter which allows us to provide more options to overwrite how the payload for request action and failure action are generated:
 
 ```typescript
 const fetchData = getThunkActionCreator(
@@ -215,21 +261,75 @@ const fetchData = getThunkActionCreator(
     return await api.fetchData(id);
   },
   {
-    // this is optional
+    // [Optional] We can overwrite how we create request payload.
+    // Usually we just use this payload to do logging
     getRequestPayload: async (id: number) => {
       return {
         overwrittenPayload: id
       };
     },
-    // this is also optional
+    // [Optional] We can overwrite how we create failure payload.
     getFailurePayload: async (e: Error) => {
       return new Error('Overwritten Error!');
-    }
+    },
+    // [Optional] By default, we rethrow the error after dispatch FAILURE action to break the promise chain
+    // The cost is you have to catch the error when you dispatch the thunk action
+    // If you don't want to chain the thunk action with others and don't want to
+    //   handle errors apart from dispatching FAILURE action, you can disable rethrow
+    rethrowError: false
   }
 );
 ```
 
-### Type checking for reducer
+### Get Typed Action Payload In Reducer
+
+We can easily get typed action payload by using type guard match functions (recommend):
+
+```typescript
+const reducer = (state: State = initState, action: Action<any>): State => {
+  // .isSuccessAction() is a type guard
+  if (fetchDataRoutine.isSuccessAction(action)) {
+    // action is typed as Action<DataType>, so payload is DataType
+    const payload = action.payload;
+    // ...
+  }
+
+  // .isFailureAction() is a type guard
+  if (fetchDataRoutine.isFailureAction(action)) {
+    // action is typed as Action<Error>, so error is Error
+    const error = action.payload;
+    // ...
+  }
+
+  // .isRequestAction()
+  if (fetchDataRoutine.isRequestAction(action)) {
+    // ...
+  }
+};
+```
+
+Or we can use the `getXXX` functions:
+
+```typescript
+const reducer = (state: State = initState, action: Action<any>): State => {
+  switch (action.type) {
+    case fetchDataRoutine.SUCCESS: {
+      // payload is typed as Action<DataType>
+      const payload = fetchDataRoutine.getSuccessPayload(action);
+      // ...
+      break;
+    }
+    case fetchDataRoutine.FAILURE: {
+      // error is typed as Error
+      const error = fetchDataRoutine.getFailurePayload(action);
+      // ...
+      break;
+    }
+  }
+};
+```
+
+### Reducer Signature
 
 By using `redux-thunk-routine`, the type of payloads are already checked when dispatching, so it is safe to put `Action<any>` when define the reducer:
 
@@ -249,56 +349,6 @@ type ValidAction =
 
 const reducer = (state: State = initState, action: ValidAction): State => {
   // The reducer logic goes here...
-};
-```
-
-### Get typed payload in reducer
-
-To access typed payload inside the reducer, you can use these functions:
-
-- `routine.isRequestAction()`
-- `routine.isSuccessAction()`
-- `routine.isFailureAction()`
-- `routine.getRequestPayload()`
-- `routine.getSuccessPayload()`
-- `routine.getFailurePayload()`
-
-Example:
-
-```typescript
-// Use type guards
-const reducer = (state: State = initState, action: Action<any>): State => {
-  // isSuccessAction is a type guard
-  if (fetchDataRoutine.isSuccessAction(action)) {
-    // action is typed as Action<DataType>, so payload is DataType
-    const payload = action.payload;
-    // ...
-  }
-
-  // isFailureAction is a type guard
-  if (fetchDataRoutine.isFailureAction(action)) {
-    // action is typed as Action<Error>, so error is Error
-    const error = action.payload;
-    // ...
-  }
-};
-
-// Use getter functions directly
-const reducer = (state: State = initState, action: Action<any>): State => {
-  switch (action.type) {
-    case fetchDataRoutine.SUCCESS: {
-      // payload is typed as Action<DataType>
-      const payload = fetchDataRoutine.getSuccessPayload(action);
-      // ...
-      break;
-    }
-    case fetchDataRoutine.FAILURE: {
-      // error is typed as Error
-      const error = fetchDataRoutine.getFailurePayload(action);
-      // ...
-      break;
-    }
-  }
 };
 ```
 
@@ -331,4 +381,61 @@ When using `routine`, we are enforced to follow a common pattern to name our act
 
 For example, we can implement a global loading reducer and a global error reducer based on regular expression to match action types, then remove the branches of dealing "REQUEST" and "FAILURE" actions in other reducers.
 
+Quick example here:
+
+```typescript
+// We start with defining the LoadingState
+
+// The shape of LoadingState is a hashmap-like object
+// Example: {
+//   FETCH_BLOG: true,
+//   FETCH_USER: false,
+// }
+//
+export type LoadingState = Record<string, boolean>;
+
+// Then we write the reducer to handle the logic of changing the global loading state
+
+export default (state: LoadingState = {}, action: Action<any>): LoadingState => {
+  const { type } = action;
+  const matches = /(.*)\/(REQUEST|SUCCESS|FAILURE)/.exec(type);
+
+  // Ignore non-routine actions:
+  //   A routine action should have one of three suffixes:
+  //   ['/REQUEST', '/SUCCESS', '/FAILURE']
+  if (!matches) return state;
+
+  const [, routineType, status] = matches;
+  return {
+    ...state,
+    // Set loading state to true only when the status is "REQUEST"
+    //    Otherwise set the loading state to false
+    [routineType]: status === 'REQUEST'
+  };
+};
+
+// Then we can write some selectors to use it
+
+// Select whether any routine is loading
+export const isLoadingAnyRoutine = (state: RootState) => {
+  return Object.values(state.ui.loading).some(Boolean);
+};
+
+// Select whether a given routine is loading
+export const isLoadingRoutine = (routineType: string) => (state: RootState) => {
+  return Boolean(state.ui.loading[routineType]);
+};
+
+// Select whether any of a given set of routines is loading
+export const isLoadingAnyRoutineOf = (routineTypes: string[]) => (state: RootState) => {
+  return routineTypes.some(routineType => Boolean(state.ui.loading[routineType]));
+};
+```
+
 There are more details in [this blog](https://medium.com/@zzdjk6/implement-global-loading-and-error-state-with-redux-thunk-routine-and-typescript-b278f93e99fd?source=friends_link&sk=2435bafc1714b4018116f475f865a62a).
+
+## Acknoledgement
+
+This library uses [redux-actions](https://github.com/redux-utilities/redux-actions) to create [Flux Standard Actions](https://github.com/redux-utilities/flux-standard-action)
+
+This library is inspired by [redux-saga-routines](https://github.com/afitiskin/redux-saga-routines).
