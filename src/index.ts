@@ -38,11 +38,13 @@ export class ReduxThunkRoutine<TPayload, TError extends Error = Error> {
   readonly actionType: string;
 
   constructor(routineType: string) {
-    this.actionType = routineType;
     this.routineType = routineType;
     this.REQUEST = `${this.routineType}/REQUEST`;
     this.SUCCESS = `${this.routineType}/SUCCESS`;
     this.FAILURE = `${this.routineType}/FAILURE`;
+
+    // Deprecated
+    this.actionType = routineType;
   }
 
   /**
@@ -152,25 +154,26 @@ export const createThunkRoutine = <TPayload, TError extends Error = Error>(
  * Helper function to generate a thunk action creator from the given routine and executor function
  * @param routine
  * @param getSuccessPayload
- * @param overwritePayload
+ * @param options
  */
 export const getThunkActionCreator = <TPayload, TError extends Error = Error, TArguments = void>(
   routine: ReduxThunkRoutine<TPayload, TError>,
   getSuccessPayload: (args: TArguments) => Promise<TPayload>,
-  overwritePayload?: {
+  options?: {
     getRequestPayload?: (args: TArguments) => Promise<any>;
     getFailurePayload?: (error: Error) => Promise<TError>;
+    rethrowError?: boolean
   }
 ) => {
   return (args: TArguments) => async (dispatch: any) => {
     // Get request payload, default is `args`
     let requestPayload: any = args;
     if (
-      overwritePayload &&
-      overwritePayload.getRequestPayload &&
-      typeof overwritePayload.getRequestPayload === 'function'
+      options &&
+      options.getRequestPayload &&
+      typeof options.getRequestPayload === 'function'
     ) {
-      requestPayload = await overwritePayload.getRequestPayload(args);
+      requestPayload = await options.getRequestPayload(args);
     }
 
     // Dispatch REQUEST action
@@ -186,17 +189,21 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
       // Get failure payload, default is the caught `Error`
       let failurePayload = error;
       if (
-        overwritePayload &&
-        overwritePayload.getFailurePayload &&
-        typeof overwritePayload.getFailurePayload === 'function'
+        options &&
+        options.getFailurePayload &&
+        typeof options.getFailurePayload === 'function'
       ) {
-        failurePayload = await overwritePayload.getFailurePayload(error);
+        failurePayload = await options.getFailurePayload(error);
       }
 
       // Dispatch FAILURE action
       await dispatch(routine.failure(failurePayload));
 
-      // Re-throw error
+      // By default, we should rethrow error to break the chain execution
+      // But we also provide an option to disable it
+      if (options && options.rethrowError === false) {
+        return;
+      }
       throw failurePayload;
     }
   };
