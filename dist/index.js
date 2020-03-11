@@ -149,11 +149,7 @@ exports.getThunkActionCreator = (routine, getSuccessPayload, options) => {
             }
             // Dispatch FAILURE action
             yield dispatch(routine.failure(failurePayload));
-            // By default, we should rethrow error to break the chain execution
-            // But we also provide an option to disable it
-            if (options && options.rethrowError === false) {
-                return;
-            }
+            // Always rethrow
             throw failurePayload;
         }
     });

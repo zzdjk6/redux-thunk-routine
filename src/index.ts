@@ -162,10 +162,9 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
   options?: {
     getRequestPayload?: (args: TArguments) => Promise<any>;
     getFailurePayload?: (error: Error) => Promise<TError>;
-    rethrowError?: boolean
   }
 ) => {
-  return (args: TArguments) => async (dispatch: any) => {
+  return (args: TArguments) => async (dispatch: any): Promise<Action<TPayload>> => {
     // Get request payload, default is `args`
     let requestPayload: any = args;
     if (
@@ -199,11 +198,7 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
       // Dispatch FAILURE action
       await dispatch(routine.failure(failurePayload));
 
-      // By default, we should rethrow error to break the chain execution
-      // But we also provide an option to disable it
-      if (options && options.rethrowError === false) {
-        return;
-      }
+      // Always rethrow
       throw failurePayload;
     }
   };

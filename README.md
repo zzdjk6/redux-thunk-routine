@@ -23,7 +23,7 @@ That's why I created `redux-thunk-routine`, a small libary to reduce the boilerp
 ## Elevator Pitch
 
 - This libary can save your time (less boilerplate and better static typing)
-- It can also generalize the flow of dispatching actions (refer: [Global Loading & Error State](https://github.com/zzdjk6/demo-global-loading-state))
+- It can also generalize the flow of dispatching actions (example: [Global Loading & Error State](https://github.com/zzdjk6/demo-global-loading-state))
 - There is no harm to your existing code when you add this library
 - It comes with drop-in replacement to your hand-writen code as well as helpers to simplify more
 - Test Coverage is 100%
@@ -271,12 +271,7 @@ const fetchData = getThunkActionCreator(
     // [Optional] We can overwrite how we create failure payload.
     getFailurePayload: async (e: Error) => {
       return new Error('Overwritten Error!');
-    },
-    // [Optional] By default, we rethrow the error after dispatch FAILURE action to break the promise chain
-    // The cost is you have to catch the error when you dispatch the thunk action
-    // If you don't want to chain the thunk action with others and don't want to
-    //   handle errors apart from dispatching FAILURE action, you can disable rethrow
-    rethrowError: false
+    }
   }
 );
 ```
