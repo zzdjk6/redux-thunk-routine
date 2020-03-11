@@ -99,11 +99,12 @@ class ReduxThunkRoutine {
             }
             return action.payload;
         };
-        this.actionType = routineType;
         this.routineType = routineType;
         this.REQUEST = `${this.routineType}/REQUEST`;
         this.SUCCESS = `${this.routineType}/SUCCESS`;
         this.FAILURE = `${this.routineType}/FAILURE`;
+        // Deprecated
+        this.actionType = routineType;
     }
 }
 exports.ReduxThunkRoutine = ReduxThunkRoutine;
@@ -119,16 +120,16 @@ exports.createThunkRoutine = (routineType) => {
  * Helper function to generate a thunk action creator from the given routine and executor function
  * @param routine
  * @param getSuccessPayload
- * @param overwritePayload
+ * @param options
  */
-exports.getThunkActionCreator = (routine, getSuccessPayload, overwritePayload) => {
+exports.getThunkActionCreator = (routine, getSuccessPayload, options) => {
     return (args) => (dispatch) => __awaiter(void 0, void 0, void 0, function* () {
         // Get request payload, default is `args`
         let requestPayload = args;
-        if (overwritePayload &&
-            overwritePayload.getRequestPayload &&
-            typeof overwritePayload.getRequestPayload === 'function') {
-            requestPayload = yield overwritePayload.getRequestPayload(args);
+        if (options &&
+            options.getRequestPayload &&
+            typeof options.getRequestPayload === 'function') {
+            requestPayload = yield options.getRequestPayload(args);
         }
         // Dispatch REQUEST action
         yield dispatch(routine.request(requestPayload));
@@ -141,14 +142,18 @@ exports.getThunkActionCreator = (routine, getSuccessPayload, overwritePayload) =
         catch (error) {
             // Get failure payload, default is the caught `Error`
             let failurePayload = error;
-            if (overwritePayload &&
-                overwritePayload.getFailurePayload &&
-                typeof overwritePayload.getFailurePayload === 'function') {
-                failurePayload = yield overwritePayload.getFailurePayload(error);
+            if (options &&
+                options.getFailurePayload &&
+                typeof options.getFailurePayload === 'function') {
+                failurePayload = yield options.getFailurePayload(error);
             }
             // Dispatch FAILURE action
             yield dispatch(routine.failure(failurePayload));
-            // Re-throw error
+            // By default, we should rethrow error to break the chain execution
+            // But we also provide an option to disable it
+            if (options && options.rethrowError === false) {
+                return;
+            }
             throw failurePayload;
         }
     });
