@@ -94,78 +94,6 @@ test('Action creators are correctly bound', () => {
   });
 });
 
-describe('Helper - Dispatch routine', () => {
-  const routine: ReduxThunkRoutine<number> = createThunkRoutine('TEST/MOCK_ROUTINE');
-
-  let dispatchedActions: any;
-  let dispatch: any;
-
-  beforeEach(() => {
-    dispatchedActions = [];
-    dispatch = jest.fn(action => dispatchedActions.push(action));
-  });
-
-  test('Plain executor success', async () => {
-    await dispatchRoutine(dispatch, routine, async () => {
-      return 123;
-    });
-    expect(dispatch.mock.calls.length).toBe(2);
-    expect(dispatchedActions).toEqual([routine.request(), routine.success(123)]);
-  });
-
-  test('Plain executor failure', async () => {
-    expect.assertions(2);
-
-    const error = new Error('I am an Error');
-    try {
-      await dispatchRoutine(dispatch, routine, async () => {
-        throw error;
-      });
-    } catch (e) {}
-
-    expect(dispatch.mock.calls.length).toBe(2);
-    expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
-  });
-
-  test('Composed executor success - 1', async () => {
-    await dispatchRoutine(dispatch, routine, {
-      getSuccessPayload: async () => 223
-    });
-    expect(dispatch.mock.calls.length).toBe(2);
-    expect(dispatchedActions).toEqual([routine.request(), routine.success(223)]);
-  });
-
-  test('Composed executor success - 2', async () => {
-    const requestPayload = Symbol();
-    await dispatchRoutine(dispatch, routine, {
-      getRequestPayload: () => requestPayload,
-      getSuccessPayload: async () => 223
-    });
-    expect(dispatch.mock.calls.length).toBe(2);
-    expect(dispatchedActions).toEqual([routine.request(requestPayload), routine.success(223)]);
-  });
-
-  test('Composed executor failure', async () => {
-    expect.assertions(2);
-
-    const error = new Error('I am an Error');
-    const requestPayload = Symbol();
-
-    try {
-      await dispatchRoutine(dispatch, routine, {
-        getRequestPayload: () => requestPayload,
-        getSuccessPayload: async () => {
-          throw new Error('raw error!');
-        },
-        getFailurePayload: () => error
-      });
-    } catch (e) {}
-
-    expect(dispatch.mock.calls.length).toBe(2);
-    expect(dispatchedActions).toEqual([routine.request(requestPayload), routine.failure(error)]);
-  });
-});
-
 describe('Helper - Get Thunk Action Creator Without Args', () => {
   const routine: ReduxThunkRoutine<number> = createThunkRoutine('TEST/MOCK_ROUTINE');
 
@@ -181,34 +109,37 @@ describe('Helper - Get Thunk Action Creator Without Args', () => {
   });
 
   test('without overwrite - success', async () => {
-    expect.assertions(2);
+    expect.assertions(3);
 
     const thunk = getThunkActionCreator(routine, async () => {
       return await 1;
     });
 
-    await thunk()(dispatch);
+    const successAction = await thunk()(dispatch);
 
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request(), routine.success(1)]);
+    expect(successAction).toEqual(routine.success(1));
   });
 
   test('without overwrite - failure', async () => {
-    expect.assertions(3);
+    expect.assertions(4);
 
     const error = new Error('I am an Error');
     const thunk = getThunkActionCreator(routine, async () => {
       throw error;
     });
 
+    let successAction: any;
     try {
-      await thunk()(dispatch);
+      successAction = await thunk()(dispatch);
     } catch (e) {
       expect(e).toBe(error);
     }
 
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
+    expect(successAction).toBeUndefined();
   });
 
   test('overwrite request payload', async () => {
@@ -255,32 +186,6 @@ describe('Helper - Get Thunk Action Creator Without Args', () => {
 
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request(), routine.failure(error2)]);
-  });
-
-  test('disable rethrow error', async () => {
-    expect.assertions(3);
-
-    const error = new Error('I am an Error');
-    const thunk = getThunkActionCreator(
-        routine,
-        async () => {
-          throw error;
-        },
-        {
-          rethrowError: false
-        }
-    );
-
-    let caughtError = null;
-    try {
-      await thunk()(dispatch);
-    } catch (e) {
-      caughtError = e;
-    }
-
-    expect(caughtError).toBeNull();
-    expect(dispatch.mock.calls.length).toBe(2);
-    expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
   });
 });
 
@@ -376,30 +281,77 @@ describe('Helper - Get Thunk Action Creator With Args', () => {
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request('hello'), routine.failure(error2)]);
   });
+});
 
-  test('disable rethrow error', async () => {
-    expect.assertions(3);
+// Unit tests for deprecated features
+describe('Helper - Dispatch routine', () => {
+  const routine: ReduxThunkRoutine<number> = createThunkRoutine('TEST/MOCK_ROUTINE');
+
+  let dispatchedActions: any;
+  let dispatch: any;
+
+  beforeEach(() => {
+    dispatchedActions = [];
+    dispatch = jest.fn(action => dispatchedActions.push(action));
+  });
+
+  test('Plain executor success', async () => {
+    await dispatchRoutine(dispatch, routine, async () => {
+      return 123;
+    });
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(), routine.success(123)]);
+  });
+
+  test('Plain executor failure', async () => {
+    expect.assertions(2);
 
     const error = new Error('I am an Error');
-    const thunk = getThunkActionCreator(
-        routine,
-        async () => {
-          throw error;
-        },
-        {
-          rethrowError: false
-        }
-    );
-
-    let caughtError = null;
     try {
-      await thunk()(dispatch);
-    } catch (e) {
-      caughtError = e;
-    }
+      await dispatchRoutine(dispatch, routine, async () => {
+        throw error;
+      });
+    } catch (e) {}
 
-    expect(caughtError).toBeNull();
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
+  });
+
+  test('Composed executor success - 1', async () => {
+    await dispatchRoutine(dispatch, routine, {
+      getSuccessPayload: async () => 223
+    });
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(), routine.success(223)]);
+  });
+
+  test('Composed executor success - 2', async () => {
+    const requestPayload = Symbol();
+    await dispatchRoutine(dispatch, routine, {
+      getRequestPayload: () => requestPayload,
+      getSuccessPayload: async () => 223
+    });
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(requestPayload), routine.success(223)]);
+  });
+
+  test('Composed executor failure', async () => {
+    expect.assertions(2);
+
+    const error = new Error('I am an Error');
+    const requestPayload = Symbol();
+
+    try {
+      await dispatchRoutine(dispatch, routine, {
+        getRequestPayload: () => requestPayload,
+        getSuccessPayload: async () => {
+          throw new Error('raw error!');
+        },
+        getFailurePayload: () => error
+      });
+    } catch (e) {}
+
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(requestPayload), routine.failure(error)]);
   });
 });
