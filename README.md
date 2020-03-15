@@ -429,6 +429,20 @@ export const isLoadingAnyRoutineOf = (routineTypes: string[]) => (state: RootSta
 
 There are more details in [this blog](https://medium.com/@zzdjk6/implement-global-loading-and-error-state-with-redux-thunk-routine-and-typescript-b278f93e99fd?source=friends_link&sk=2435bafc1714b4018116f475f865a62a).
 
+## FAQ
+
+### Can I use this library in JavaScript projects without introducing TypeScript?
+
+Yes, the library itself is written in TypeScript and compiled to ES6 with a `.d.ts` file for type definition.
+
+That is, it still can reduce boilerplate when use in a plain JavaScript project.
+
+### Can I use this library in my current project? How hard it is to migrate existing code?
+
+Sure, this library is a very thin abstraction layer built on top of `redux-thunk`, and there is no conflict to the foundation library. That is, it is totally harmless to add this library to your current project.
+
+When introducing new library, I would suggest to start using it for new features only to test if it fits your needs before considering to migrate existing codebase. Once you have some experience with it, the migration path should be clear.
+
 ## Acknoledgement
 
 This library uses [redux-actions](https://github.com/redux-utilities/redux-actions) to create [Flux Standard Actions](https://github.com/redux-utilities/flux-standard-action)
