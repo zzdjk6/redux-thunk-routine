@@ -1,4 +1,5 @@
 import { Action } from 'redux-actions';
+import { AbortablePromise } from 'simple-abortable-promise';
 /**
  * A routine is an instance of this generic class
  */
@@ -88,7 +89,7 @@ export declare const createThunkRoutine: <TPayload, TError extends Error = Error
 export declare const getThunkActionCreator: <TPayload, TError extends Error = Error, TArguments = void>(routine: ReduxThunkRoutine<TPayload, TError>, getSuccessPayload: (args: TArguments) => Promise<TPayload>, options?: {
     getRequestPayload?: ((args: TArguments) => Promise<any>) | undefined;
     getFailurePayload?: ((error: Error) => Promise<TError>) | undefined;
-} | undefined) => (args: TArguments) => (dispatch: any) => Promise<Action<TPayload>>;
+} | undefined) => (args: TArguments) => (dispatch: any) => AbortablePromise<Action<TPayload>>;
 /**
  * @deprecated Use `getThunkActionCreator` instead
  * @param dispatch

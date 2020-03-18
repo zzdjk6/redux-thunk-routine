@@ -4,6 +4,7 @@
 // To dispatch an action, call `routine.request/success/failure` with payload
 // This is heavily inspired by https://github.com/afitiskin/redux-saga-routines
 import { Action, createAction } from 'redux-actions';
+import { AbortablePromise, AbortError } from 'simple-abortable-promise';
 
 // Class
 
@@ -164,43 +165,57 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
     getFailurePayload?: (error: Error) => Promise<TError>;
   }
 ) => {
-  return (args: TArguments) => async (dispatch: any): Promise<Action<TPayload>> => {
-    // Get request payload, default is `args`
-    let requestPayload: any = args;
-    if (
-      options &&
-      options.getRequestPayload &&
-      typeof options.getRequestPayload === 'function'
-    ) {
-      requestPayload = await options.getRequestPayload(args);
-    }
-
-    // Dispatch REQUEST action
-    await dispatch(routine.request(requestPayload));
-
-    try {
-      // Get success payload
-      const successPayload = await getSuccessPayload(args);
-
-      // Dispatch SUCCESS action
-      return await dispatch(routine.success(successPayload));
-    } catch (error) {
-      // Get failure payload, default is the caught `Error`
-      let failurePayload = error;
-      if (
-        options &&
-        options.getFailurePayload &&
-        typeof options.getFailurePayload === 'function'
-      ) {
-        failurePayload = await options.getFailurePayload(error);
+  return (args: TArguments) => (dispatch: any): AbortablePromise<Action<TPayload>> => {
+    const abortableRequestPayloadCreator = new AbortablePromise<any>(async resolve => {
+      // Get request payload, default is `args`
+      let requestPayload: any = args;
+      if (options && options.getRequestPayload && typeof options.getRequestPayload === 'function') {
+        requestPayload = await options.getRequestPayload(args);
       }
+      resolve(requestPayload);
+    });
 
-      // Dispatch FAILURE action
-      await dispatch(routine.failure(failurePayload));
+    const abortableSuccessPayloadCreator = AbortablePromise.from(getSuccessPayload(args));
 
-      // Always rethrow
-      throw failurePayload;
-    }
+    return new AbortablePromise<Action<TPayload>>(async (resolve, reject, abortSignal) => {
+      // Abort internal promises when abort from outside
+      abortSignal.onabort = () => {
+        abortableRequestPayloadCreator.abort();
+        abortableSuccessPayloadCreator.abort();
+      };
+
+      try {
+        // Dispatch REQUEST action
+        const requestPayload = await abortableRequestPayloadCreator;
+        const requestAction = routine.request(requestPayload);
+        await dispatch(requestAction);
+
+        // Dispatch SUCCESS action
+        const successPayload = await abortableSuccessPayloadCreator;
+        const successAction = routine.success(successPayload);
+        await dispatch(successAction);
+
+        // Resolve
+        resolve(successAction);
+      } catch (error) {
+        // Get failure payload, default is the caught `Error`
+        let failurePayload = error;
+
+        try {
+          if (options && options.getFailurePayload && typeof options.getFailurePayload === 'function') {
+            failurePayload = await options.getFailurePayload(error);
+          }
+        } catch {
+          // Swallow the error for `getFailurePayload`
+        }
+
+        // Dispatch FAILURE action
+        await dispatch(routine.failure(failurePayload));
+
+        // Reject
+        reject(failurePayload);
+      }
+    });
   };
 };
 
@@ -288,4 +303,6 @@ export type PlainExecutor<TPayload> = () => Promise<TPayload>;
 /**
  * @deprecated
  */
-export type Executor<TPayload, TError extends Error = Error> = PlainExecutor<TPayload> | ComposedExecutor<TPayload, TError>;
+export type Executor<TPayload, TError extends Error = Error> =
+  | PlainExecutor<TPayload>
+  | ComposedExecutor<TPayload, TError>;

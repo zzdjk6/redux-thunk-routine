@@ -8,7 +8,8 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "redux-actions": "^2.6.5"
+    "redux-actions": "^2.6.5",
+    "simple-abortable-promise": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",
