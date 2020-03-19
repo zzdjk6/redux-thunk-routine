@@ -1,7 +1,7 @@
 import {
   createThunkRoutine,
-  getThunkActionCreator,
   dispatchRoutine,
+  getThunkActionCreator,
   getTypedError,
   getTypedPayload,
   ReduxThunkRoutine
@@ -323,7 +323,7 @@ describe('Helper - Get Thunk Action Creator With Args', () => {
     expect.assertions(4);
 
     const error = new AbortError('I abort it');
-    const thunkActionCreator = getThunkActionCreator(routine,  (str: string) => wait(200).then(() => str));
+    const thunkActionCreator = getThunkActionCreator(routine, (str: string) => wait(200).then(() => str));
 
     let successAction: any;
     try {

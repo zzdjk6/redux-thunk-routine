@@ -4,7 +4,7 @@
 // To dispatch an action, call `routine.request/success/failure` with payload
 // This is heavily inspired by https://github.com/afitiskin/redux-saga-routines
 import { Action, createAction } from 'redux-actions';
-import { AbortablePromise, AbortError } from 'simple-abortable-promise';
+import { AbortablePromise } from 'simple-abortable-promise';
 
 // Class
 
