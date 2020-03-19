@@ -370,6 +370,29 @@ const fetchDataWithIdFromState = () => (dispatch: Dispatch, getState: () => Root
 };
 ```
 
+## Experimental feature: abort/cancel thunk action
+
+Since `1.1.0-beta.0`, if your `ThunkAction` is created by using `getThunkActionCreator`, then the `Promise` returned by `ThunkAction` can be aborted.
+
+That is, we can write the code below to abort the execution of `ThunkAction`:
+
+```typescript
+// `fetchData` is the thunk action creator
+const promise = dispatch(fetchData(id));
+
+// Abort without reason
+promise.abort();
+
+// Abort with reason
+promise.abort('I abort it');
+```
+
+When aborted, the `Promise` will be rejected with an `AbortError`, and the `AbortError` will be dispatched as the payload of failure action.
+
+Under the ground, it is using `AbortablePromise` from [simple-abortable-promise](https://github.com/zzdjk6/simple-abortable-promise).
+
+If your `getSuccessPayload` function returns an `AbortablePromise`, then that `Promise` will be aborted as well when the `Promise` returned by `ThunkAction` is aborted. Otherwise, the logic of `getSuccessPayload` will still be executed, and the result will be ignored.
+
 ## Other benefits of using routines
 
 When using `routine`, we are enforced to follow a common pattern to name our action types, and we are sure that each routine has the same flow of dispatching actions. That gives us a huge advantage if we want to pull out repetitive logic in reducers.
