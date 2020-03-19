@@ -125,25 +125,29 @@ exports.createThunkRoutine = (routineType) => {
  */
 exports.getThunkActionCreator = (routine, getSuccessPayload, options) => {
     return (args) => (dispatch) => {
-        return new simple_abortable_promise_1.AbortablePromise((resolve, reject, abortSignal) => __awaiter(void 0, void 0, void 0, function* () {
-            const abortableSuccessPayloadCreator = simple_abortable_promise_1.AbortablePromise.from(getSuccessPayload(args));
+        const abortableRequestPayloadCreator = new simple_abortable_promise_1.AbortablePromise((resolve) => __awaiter(void 0, void 0, void 0, function* () {
+            // Get request payload, default is `args`
+            let requestPayload = args;
+            if (options && options.getRequestPayload && typeof options.getRequestPayload === 'function') {
+                requestPayload = yield options.getRequestPayload(args);
+            }
+            resolve(requestPayload);
+        }));
+        const abortableSuccessPayloadCreator = simple_abortable_promise_1.AbortablePromise.from(getSuccessPayload(args));
+        const executionPromise = new simple_abortable_promise_1.AbortablePromise((resolve, reject, abortSignal) => __awaiter(void 0, void 0, void 0, function* () {
+            // Abort internal promises when abort from outside
             abortSignal.onabort = () => {
-                abortableSuccessPayloadCreator.abort();
-                const error = new simple_abortable_promise_1.AbortError();
-                // TODO:
-                dispatch(routine.failure(error));
+                const reason = executionPromise.abortReason;
+                abortableRequestPayloadCreator.abort(reason);
+                abortableSuccessPayloadCreator.abort(reason);
             };
             try {
-                // Get request payload, default is `args`
-                let requestPayload = args;
-                if (options && options.getRequestPayload && typeof options.getRequestPayload === 'function') {
-                    requestPayload = yield options.getRequestPayload(args);
-                }
                 // Dispatch REQUEST action
-                yield dispatch(routine.request(requestPayload));
-                // Get success payload
-                const successPayload = yield abortableSuccessPayloadCreator;
+                const requestPayload = yield abortableRequestPayloadCreator;
+                const requestAction = routine.request(requestPayload);
+                yield dispatch(requestAction);
                 // Dispatch SUCCESS action
+                const successPayload = yield abortableSuccessPayloadCreator;
                 const successAction = routine.success(successPayload);
                 yield dispatch(successAction);
                 // Resolve
@@ -152,8 +156,13 @@ exports.getThunkActionCreator = (routine, getSuccessPayload, options) => {
             catch (error) {
                 // Get failure payload, default is the caught `Error`
                 let failurePayload = error;
-                if (options && options.getFailurePayload && typeof options.getFailurePayload === 'function') {
-                    failurePayload = yield options.getFailurePayload(error);
+                try {
+                    if (options && options.getFailurePayload && typeof options.getFailurePayload === 'function') {
+                        failurePayload = yield options.getFailurePayload(error);
+                    }
+                }
+                catch (_a) {
+                    // Swallow the error throw by `getFailurePayload`
                 }
                 // Dispatch FAILURE action
                 yield dispatch(routine.failure(failurePayload));
@@ -161,6 +170,7 @@ exports.getThunkActionCreator = (routine, getSuccessPayload, options) => {
                 reject(failurePayload);
             }
         }));
+        return executionPromise;
     };
 };
 /**

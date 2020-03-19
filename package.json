@@ -9,7 +9,7 @@
   ],
   "dependencies": {
     "redux-actions": "^2.6.5",
-    "simple-abortable-promise": "^1.0.0"
+    "simple-abortable-promise": "^1.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",

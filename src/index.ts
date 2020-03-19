@@ -177,11 +177,12 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
 
     const abortableSuccessPayloadCreator = AbortablePromise.from(getSuccessPayload(args));
 
-    return new AbortablePromise<Action<TPayload>>(async (resolve, reject, abortSignal) => {
+    const executionPromise = new AbortablePromise<Action<TPayload>>(async (resolve, reject, abortSignal) => {
       // Abort internal promises when abort from outside
       abortSignal.onabort = () => {
-        abortableRequestPayloadCreator.abort();
-        abortableSuccessPayloadCreator.abort();
+        const reason = executionPromise.abortReason;
+        abortableRequestPayloadCreator.abort(reason);
+        abortableSuccessPayloadCreator.abort(reason);
       };
 
       try {
@@ -206,7 +207,7 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
             failurePayload = await options.getFailurePayload(error);
           }
         } catch {
-          // Swallow the error for `getFailurePayload`
+          // Swallow the error throw by `getFailurePayload`
         }
 
         // Dispatch FAILURE action
@@ -216,6 +217,8 @@ export const getThunkActionCreator = <TPayload, TError extends Error = Error, TA
         reject(failurePayload);
       }
     });
+
+    return executionPromise;
   };
 };
 
