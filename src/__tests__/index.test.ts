@@ -1,11 +1,19 @@
 import {
   createThunkRoutine,
-  getThunkActionCreator,
   dispatchRoutine,
+  getThunkActionCreator,
   getTypedError,
   getTypedPayload,
   ReduxThunkRoutine
 } from '../index';
+import { AbortError } from 'simple-abortable-promise';
+
+const wait = (ms: number) =>
+  new Promise(resolve =>
+    setTimeout(() => {
+      resolve(ms);
+    }, ms)
+  );
 
 test('Routine has correct action name', () => {
   const routine = createThunkRoutine('TEST/MOCK_ROUTINE');
@@ -46,9 +54,7 @@ test('Get typed payload for success action', () => {
 });
 
 test('Get typed payload for request action', () => {
-  const routine: ReduxThunkRoutine<number, Error> = createThunkRoutine(
-    'TEST/MOCK_ROUTINE'
-  );
+  const routine: ReduxThunkRoutine<number, Error> = createThunkRoutine('TEST/MOCK_ROUTINE');
   const action = routine.request({ label: 'hello', value: 321 });
   expect(routine.getRequestPayload(action)).toEqual({ label: 'hello', value: 321 });
 
@@ -187,6 +193,37 @@ describe('Helper - Get Thunk Action Creator Without Args', () => {
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request(), routine.failure(error2)]);
   });
+
+  test('abort', async () => {
+    expect.assertions(4);
+
+    const error = new AbortError('I abort it');
+    const thunk = getThunkActionCreator(routine, async () => {
+      return await new Promise(resolve => {
+        setTimeout(() => {
+          resolve(1);
+        }, 200);
+      });
+    });
+
+    let successAction: any;
+    try {
+      const promise = thunk()(dispatch);
+      setTimeout(() => {
+        promise.abort('I abort it');
+      }, 50);
+      successAction = await promise;
+    } catch (e) {
+      expect(e).toEqual(error);
+    }
+
+    // Internal logic will be executed even when the promise is aborted
+    await wait(50);
+
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request(), routine.failure(error)]);
+    expect(successAction).toBeUndefined();
+  });
 });
 
 describe('Helper - Get Thunk Action Creator With Args', () => {
@@ -280,6 +317,31 @@ describe('Helper - Get Thunk Action Creator With Args', () => {
 
     expect(dispatch.mock.calls.length).toBe(2);
     expect(dispatchedActions).toEqual([routine.request('hello'), routine.failure(error2)]);
+  });
+
+  test('abort', async () => {
+    expect.assertions(4);
+
+    const error = new AbortError('I abort it');
+    const thunkActionCreator = getThunkActionCreator(routine, (str: string) => wait(200).then(() => str));
+
+    let successAction: any;
+    try {
+      const promise = thunkActionCreator('Hello')(dispatch);
+      setTimeout(() => {
+        promise.abort('I abort it');
+      }, 50);
+      successAction = await promise;
+    } catch (e) {
+      expect(e).toEqual(error);
+    }
+
+    // Internal logic will be executed even when the promise is aborted
+    await wait(50);
+
+    expect(dispatch.mock.calls.length).toBe(2);
+    expect(dispatchedActions).toEqual([routine.request('Hello'), routine.failure(error)]);
+    expect(successAction).toBeUndefined();
   });
 });
 

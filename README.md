@@ -370,6 +370,29 @@ const fetchDataWithIdFromState = () => (dispatch: Dispatch, getState: () => Root
 };
 ```
 
+## Abort/Cancel thunk action
+
+Since version `1.1.0`, if you use `getThunkActionCreator` to create your `ThunkAction`, then the `Promise` returned by the `ThunkAction` can be aborted.
+
+The code below is a simple example to show how to abort the execution of `ThunkAction`:
+
+```typescript
+// `fetchData` is the thunk action creator
+const promise = dispatch(fetchData(id));
+
+// Abort with default reason ('Aborted')
+promise.abort();
+
+// Abort with reason
+promise.abort('I abort it');
+```
+
+When aborted, the `Promise` will be rejected with an `AbortError`, and the `AbortError` will be dispatched as the payload of failure action.
+
+Under the ground, it is using `AbortablePromise` from [simple-abortable-promise](https://github.com/zzdjk6/simple-abortable-promise).
+
+If your `getSuccessPayload` function returns an `AbortablePromise`, then that `Promise` will be aborted as well when the `ThunkAction` is aborted. Otherwise, the logic of `getSuccessPayload` will still be executed, and the result will be ignored.
+
 ## Other benefits of using routines
 
 When using `routine`, we are enforced to follow a common pattern to name our action types, and we are sure that each routine has the same flow of dispatching actions. That gives us a huge advantage if we want to pull out repetitive logic in reducers.
@@ -442,6 +465,64 @@ That is, it still can reduce boilerplate when use in a plain JavaScript project.
 Sure, this library is a very thin abstraction layer built on top of `redux-thunk`, and there is no conflict to the foundation library. That is, it is totally harmless to add this library to your current project.
 
 When introducing new library, I would suggest to start using it for new features only to test if it fits your needs before considering to migrate existing codebase. Once you have some experience with it, the migration path should be clear.
+
+### Can I extend the routine to add other actions?
+
+Of course. As discussed in [this issue](!https://github.com/zzdjk6/redux-thunk-routine/issues/1), it is easy to create a subclass of `ReduxThunkRoutine`.
+For example, the code below demonstrates how to add `TRUNCATE` as part of your routine.
+
+```typescript
+// imports
+import { ReduxThunkRoutine } from 'redux-thunk-routine';
+import { Action, createAction } from 'redux-actions';
+
+// Create the subclass
+export class MyThunkRoutine<TPayload, TError extends Error = Error> extends ReduxThunkRoutine<TPayload, TError> {
+  // Allow access to the action name
+  readonly TRUNCATE: string;
+
+  // Constructor
+  constructor(routineType: string) {
+    super(routineType);
+    this.TRUNCATE = `${this.routineType}/TRUNCATE`;
+  }
+
+  // Extend the routine: action creator
+  truncate = (): Action<any> => {
+    const actionCreator = createAction(this.TRUNCATE);
+    return actionCreator();
+  };
+
+  // Extend the routine: helper match function
+  isTruncateAction = (action: Action<any>): action is Action<any> => {
+    return action.type === this.TRUNCATE;
+  };
+}
+```
+
+Then we can use it like this:
+
+```typescript
+// Create routine
+const routine = new MyThunkRoutine<DataType>('FETCH_DATA');
+
+// Dispatch TRUNCATE action
+dispatch(routine.truncate());
+
+// Access the action name directly in reducer
+switch (action.type) {
+  //...
+  case routine.TRUNCATE:
+    // Do stuff
+    break;
+}
+
+// Use match helper function in reducer
+if (routine.isTruncateAction(action)) {
+  // Do stuff
+  return state;
+}
+```
 
 ## Acknoledgement
 

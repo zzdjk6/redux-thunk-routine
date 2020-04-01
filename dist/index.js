@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // To dispatch an action, call `routine.request/success/failure` with payload
 // This is heavily inspired by https://github.com/afitiskin/redux-saga-routines
 const redux_actions_1 = require("redux-actions");
+const simple_abortable_promise_1 = require("simple-abortable-promise");
 // Class
 /**
  * A routine is an instance of this generic class
@@ -123,36 +124,54 @@ exports.createThunkRoutine = (routineType) => {
  * @param options
  */
 exports.getThunkActionCreator = (routine, getSuccessPayload, options) => {
-    return (args) => (dispatch) => __awaiter(void 0, void 0, void 0, function* () {
-        // Get request payload, default is `args`
-        let requestPayload = args;
-        if (options &&
-            options.getRequestPayload &&
-            typeof options.getRequestPayload === 'function') {
-            requestPayload = yield options.getRequestPayload(args);
-        }
-        // Dispatch REQUEST action
-        yield dispatch(routine.request(requestPayload));
-        try {
-            // Get success payload
-            const successPayload = yield getSuccessPayload(args);
-            // Dispatch SUCCESS action
-            return yield dispatch(routine.success(successPayload));
-        }
-        catch (error) {
-            // Get failure payload, default is the caught `Error`
-            let failurePayload = error;
-            if (options &&
-                options.getFailurePayload &&
-                typeof options.getFailurePayload === 'function') {
-                failurePayload = yield options.getFailurePayload(error);
+    return (args) => (dispatch) => {
+        const abortableRequestPayloadCreator = new simple_abortable_promise_1.AbortablePromise((resolve) => __awaiter(void 0, void 0, void 0, function* () {
+            // Get request payload, default is `args`
+            let requestPayload = args;
+            if (options && options.getRequestPayload && typeof options.getRequestPayload === 'function') {
+                requestPayload = yield options.getRequestPayload(args);
             }
-            // Dispatch FAILURE action
-            yield dispatch(routine.failure(failurePayload));
-            // Always rethrow
-            throw failurePayload;
-        }
-    });
+            resolve(requestPayload);
+        }));
+        const abortableSuccessPayloadCreator = simple_abortable_promise_1.AbortablePromise.from(getSuccessPayload(args));
+        const executionPromise = new simple_abortable_promise_1.AbortablePromise((resolve, reject, abortSignal) => __awaiter(void 0, void 0, void 0, function* () {
+            // Abort internal promises when abort from outside
+            abortSignal.onabort = () => {
+                const reason = executionPromise.abortReason;
+                abortableRequestPayloadCreator.abort(reason);
+                abortableSuccessPayloadCreator.abort(reason);
+            };
+            try {
+                // Dispatch REQUEST action
+                const requestPayload = yield abortableRequestPayloadCreator;
+                const requestAction = routine.request(requestPayload);
+                yield dispatch(requestAction);
+                // Dispatch SUCCESS action
+                const successPayload = yield abortableSuccessPayloadCreator;
+                const successAction = routine.success(successPayload);
+                yield dispatch(successAction);
+                // Resolve
+                resolve(successAction);
+            }
+            catch (error) {
+                // Get failure payload, default is the caught `Error`
+                let failurePayload = error;
+                try {
+                    if (options && options.getFailurePayload && typeof options.getFailurePayload === 'function') {
+                        failurePayload = yield options.getFailurePayload(error);
+                    }
+                }
+                catch (_a) {
+                    // Swallow the error throw by `getFailurePayload`
+                }
+                // Dispatch FAILURE action
+                yield dispatch(routine.failure(failurePayload));
+                // Reject
+                reject(failurePayload);
+            }
+        }));
+        return executionPromise;
+    };
 };
 /**
  * @deprecated Use `getThunkActionCreator` instead
