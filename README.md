@@ -468,7 +468,7 @@ When introducing new library, I would suggest to start using it for new features
 
 ### Can I extend the routine to add other actions?
 
-Of course. As discussed in [this issue](!https://github.com/zzdjk6/redux-thunk-routine/issues/1), it is easy to create a subclass of `ReduxThunkRoutine`.
+Of course. As discussed in [this issue](https://github.com/zzdjk6/redux-thunk-routine/issues/1), it is easy to create a subclass of `ReduxThunkRoutine`.
 For example, the code below demonstrates how to add `TRUNCATE` as part of your routine.
 
 ```typescript
